@@ -104,7 +104,7 @@ router.get('/:id', async (req, res) => {
     const match = matchResult.rows[0];
 
     // All queries in parallel
-    const [odds, h2h, injuries, props, publicBetting, homeGames, awayGames, homeLineup, awayLineup, pitchers, batters] = await Promise.all([
+    const [odds, h2h, injuries, props, publicBetting, homeGames, awayGames, homeLineup, awayLineup, pitchers, batters, batterVsPitcher] = await Promise.all([
       pool.query('SELECT * FROM odds WHERE match_id = $1', [id]),
       pool.query(
         `SELECT * FROM h2h_records
@@ -168,6 +168,10 @@ router.get('/:id', async (req, res) => {
         `SELECT * FROM team_batters_splits WHERE team_id IN ($1,$2) ORDER BY team_id, season_ab DESC`,
         [match.home_team_id, match.away_team_id]
       ),
+      pool.query(
+        `SELECT * FROM batter_vs_pitcher WHERE match_id = $1 ORDER BY batter_team_id, ab DESC`,
+        [id]
+      ),
     ]);
 
     res.json({
@@ -183,6 +187,7 @@ router.get('/:id', async (req, res) => {
       away_lineup: awayLineup.rows,
       probable_pitchers: pitchers.rows,
       team_batters: batters.rows,
+      batter_vs_pitcher: batterVsPitcher.rows,
     });
   } catch (err) {
     console.error('Error obteniendo detalle:', err);

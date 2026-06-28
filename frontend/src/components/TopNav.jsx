@@ -5,7 +5,7 @@ const LEAGUES = [
   { slug: 'nba',     name: 'NBA' },
   { slug: 'nfl',     name: 'NFL' },
   { slug: 'nhl',     name: 'NHL' },
-  { slug: 'liga-mx', name: 'Soccer' },
+  { slug: 'liga-mx', name: 'Fútbol' },
 ];
 
 export default function TopNav({ activeLeague, onLeague }) {
@@ -76,7 +76,7 @@ export default function TopNav({ activeLeague, onLeague }) {
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search..."
+            placeholder="Buscar..."
             style={{
               background: 'none', border: 'none', outline: 'none',
               fontSize: '12px', color: 'rgba(255,255,255,0.6)',

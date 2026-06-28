@@ -18,8 +18,8 @@ const fmtRec = (w, l, t) => (!w && w !== 0) ? '' : t > 0 ? `${w}-${l}-${t}` : `$
 const fmtTime = dateStr => {
   const d = new Date(dateStr);
   const isToday = new Date().toDateString() === d.toDateString();
-  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-  return `${isToday ? 'TODAY' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()} · ${time}`;
+  const time = d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return `${isToday ? 'HOY' : d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' }).toUpperCase()} · ${time}`;
 };
 
 export default function MatchCard({ match }) {
@@ -84,7 +84,7 @@ export default function MatchCard({ match }) {
         <div style={{ flex: 1, display: 'flex', overflowX: 'auto', padding: '16px', gap: '12px' }}>
           {/* Moneyline */}
           <div style={{ flex: '1 0 120px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(188,202,187,0.35)', textTransform: 'uppercase', marginBottom: '2px' }}>Moneyline</p>
+            <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(188,202,187,0.35)', textTransform: 'uppercase', marginBottom: '2px' }}>Dinero</p>
                     <OddsPill label={match.home_short} value={fmt(bestH?.home_odds)} />
             <OddsPill label={match.away_short} value={fmt(bestA?.away_odds)} />
           </div>
@@ -93,7 +93,7 @@ export default function MatchCard({ match }) {
 
           {/* Run Line */}
           <div style={{ flex: '1 0 130px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(188,202,187,0.35)', textTransform: 'uppercase', marginBottom: '2px' }}>Run Line</p>
+            <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(188,202,187,0.35)', textTransform: 'uppercase', marginBottom: '2px' }}>Línea</p>
             {spread ? <>
               <OddsPill label={`${match.home_short} ${spread.spread_value > 0 ? '+' : ''}${spread.spread_value}`} value={fmt(spread.home_odds)} />
               <OddsPill label={`${match.away_short} ${spread.spread_value > 0 ? '-' : '+'}${Math.abs(spread.spread_value)}`} value={fmt(spread.away_odds)} />
@@ -107,10 +107,10 @@ export default function MatchCard({ match }) {
 
           {/* Over/Under */}
           <div style={{ flex: '1 0 130px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(188,202,187,0.35)', textTransform: 'uppercase', marginBottom: '2px' }}>Over / Under</p>
+            <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', color: 'rgba(188,202,187,0.35)', textTransform: 'uppercase', marginBottom: '2px' }}>Totales</p>
             {total ? <>
-              <OddsPill label={`Over ${total.total_value}`}  value={fmt(total.over_odds)} />
-              <OddsPill label={`Under ${total.total_value}`} value={fmt(total.under_odds)} />
+              <OddsPill label={`Más ${total.total_value}`}  value={fmt(total.over_odds)} />
+              <OddsPill label={`Menos ${total.total_value}`} value={fmt(total.under_odds)} />
             </> : <>
               <OddsPill label="—" value={null} />
               <OddsPill label="—" value={null} />
@@ -123,9 +123,9 @@ export default function MatchCard({ match }) {
       {pbOpen && (
         <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', background: '#080808', padding: '16px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
-            <PbCol title="Money Line"   pb={pbMl} left={match.home_short} right={match.away_short} />
-            <PbCol title="Run Line"     pb={pbRl} left={match.home_short} right={match.away_short} />
-            <PbCol title="Over / Under" pb={pbOu} left="Over"             right="Under" />
+            <PbCol title="Dinero"   pb={pbMl} left={match.home_short} right={match.away_short} />
+            <PbCol title="Línea"    pb={pbRl} left={match.home_short} right={match.away_short} />
+            <PbCol title="Totales"  pb={pbOu} left="Más"              right="Menos" />
           </div>
         </div>
       )}
@@ -153,7 +153,7 @@ export default function MatchCard({ match }) {
           <span className="material-symbols-outlined" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 0, 'wght' 300" }}>
             {pbOpen ? 'expand_less' : 'expand_more'}
           </span>
-          Public Betting
+          Apuestas Públicas
         </button>
 
         <button
@@ -169,7 +169,7 @@ export default function MatchCard({ match }) {
           onMouseEnter={e => e.currentTarget.style.color = '#6bfb9a'}
           onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.28)'}
         >
-          Match Details
+          Ver Partido
           <span className="material-symbols-outlined" style={{ fontSize: '14px', fontVariationSettings: "'FILL' 0, 'wght' 300" }}>chevron_right</span>
         </button>
       </div>
@@ -293,7 +293,7 @@ function PbCol({ title, pb, left, right }) {
   if (!pb) return (
     <div>
       <p style={{ fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(188,202,187,0.3)', marginBottom: '12px' }}>{title}</p>
-      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.18)' }}>No data</p>
+      <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.18)' }}>Sin datos</p>
     </div>
   );
 

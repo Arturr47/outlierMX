@@ -45,7 +45,7 @@ export default function MyPicks() {
           <Bookmark className="w-8 h-8 text-emerald-400" /> Mis Picks
         </h1>
         <p className="text-slate-400">
-          Tus apuestas guardadas ({picks.length} picks)
+          Tus picks guardados ({picks.length} picks)
         </p>
       </div>
 
@@ -54,7 +54,7 @@ export default function MyPicks() {
           <Bookmark className="w-12 h-12 text-slate-600 mx-auto mb-4" />
           <p className="text-slate-400 text-lg mb-2">No tienes picks guardados</p>
           <p className="text-slate-500 text-sm">
-            Ve a un partido y agrega picks desde los momios o props
+            Entra a un partido y guarda picks desde los momios o props
           </p>
         </div>
       ) : (

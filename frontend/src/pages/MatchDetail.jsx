@@ -65,7 +65,7 @@ export default function MatchDetail() {
     </div>
   );
 
-  const { match, odds, h2h, injuries, props: playerProps, public_betting, home_recent, away_recent, home_lineup, away_lineup, probable_pitchers, team_batters } = data;
+  const { match, odds, h2h, injuries, props: playerProps, public_betting, home_recent, away_recent, home_lineup, away_lineup, probable_pitchers, team_batters, batter_vs_pitcher } = data;
   const isSoccer = match.sport === 'soccer';
   const hasPitchers = Array.isArray(probable_pitchers) && probable_pitchers.length > 0;
   const matchDate = new Date(match.match_date);
@@ -101,7 +101,7 @@ export default function MatchDetail() {
         <button onClick={() => navigate(-1)} style={{ display:'flex', alignItems:'center', gap:'6px', background:'none', border:'none', cursor:'pointer', fontSize:'12px', color:'rgba(188,202,187,0.45)', padding:0, marginBottom:'16px' }}
           onMouseEnter={e=>e.currentTarget.style.color='#bccabb'} onMouseLeave={e=>e.currentTarget.style.color='rgba(188,202,187,0.45)'}>
           <span className="material-symbols-outlined" style={{ fontSize:'15px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>arrow_back</span>
-          Back to Games
+          Volver a Partidos
         </button>
 
         {/* Match row */}
@@ -122,7 +122,7 @@ export default function MatchDetail() {
               {match.venue && <><span>·</span><span>{match.venue}</span></>}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
-              <span style={{ fontSize:'20px', fontWeight:800, color:'#f0f0f0', letterSpacing:'-0.03em' }}>Money Line</span>
+              <span style={{ fontSize:'20px', fontWeight:800, color:'#f0f0f0', letterSpacing:'-0.03em' }}>Dinero</span>
               <span style={{ fontSize:'20px', fontWeight:800, color:'#6bfb9a', letterSpacing:'-0.03em' }}>
                 {bestHomeMl ? match.home_short : '—'}
               </span>
@@ -176,7 +176,7 @@ export default function MatchDetail() {
               onClick={() => { savePick('moneyline', `${selectedPick.label} ML`, selectedPick.odds, bestHomeMl?.sportsbook); setSelectedPick(null); }}
               style={{ display:'flex', alignItems:'center', gap:'6px', padding:'7px 14px', borderRadius:'8px', background:'#6bfb9a', border:'none', cursor:'pointer', fontSize:'12.5px', fontWeight:700, color:'#0a1a0e' }}>
               <span className="material-symbols-outlined" style={{ fontSize:'14px', fontVariationSettings:"'FILL' 1,'wght' 600" }}>bookmark_add</span>
-              Save Pick
+              Guardar Pick
             </button>
           )}
         </div>
@@ -217,7 +217,7 @@ export default function MatchDetail() {
           {/* Stats header */}
           <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px' }}>
             <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'#6bfb9a', fontVariationSettings:"'FILL' 0,'wght' 300" }}>percent</span>
-            <h2 style={{ fontSize:'15px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Statistics</h2>
+            <h2 style={{ fontSize:'15px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Estadísticas</h2>
           </div>
 
           {/* Win/Loss card */}
@@ -230,7 +230,7 @@ export default function MatchDetail() {
                   <span style={{ fontSize:'11px', color:'rgba(255,255,255,0.2)', marginLeft:'5px' }}>{homeRecord}</span>
                 </div>
               </div>
-              <span style={{ fontSize:'11px', color:'rgba(188,202,187,0.25)', whiteSpace:'nowrap' }}>{numGames} games</span>
+              <span style={{ fontSize:'11px', color:'rgba(188,202,187,0.25)', whiteSpace:'nowrap' }}>{numGames} partidos</span>
               <div style={{ display:'flex', alignItems:'center', gap:'10px', justifyContent:'flex-end' }}>
                 <div style={{ textAlign:'right' }}>
                   <span style={{ fontSize:'13px', fontWeight:600, color:'#f0f0f0' }}>{match.away_team}</span>
@@ -246,8 +246,8 @@ export default function MatchDetail() {
               ].map(({ pct, recent }, idx) => (
                 <div key={idx}>
                   <div style={{ display:'flex', justifyContent:'space-between', fontSize:'11px', marginBottom:'5px' }}>
-                    <span style={{ color:'#6bfb9a', fontWeight:600 }}>Win {pct}%</span>
-                    <span style={{ color:'#f87171', fontWeight:600 }}>Lose {100-pct}%</span>
+                    <span style={{ color:'#6bfb9a', fontWeight:600 }}>Gana {pct}%</span>
+                    <span style={{ color:'#f87171', fontWeight:600 }}>Pierde {100-pct}%</span>
                   </div>
                   <div style={{ height:'5px', borderRadius:'99px', background:'rgba(255,255,255,0.06)', overflow:'hidden', display:'flex' }}>
                     <div style={{ width:`${pct}%`, background:'#6bfb9a' }} />
@@ -274,22 +274,22 @@ export default function MatchDetail() {
             <div style={{ marginTop:'24px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'12px' }}>
                 <span className="material-symbols-outlined" style={{ fontSize:'16px', color:'#6bfb9a', fontVariationSettings:"'FILL' 0,'wght' 300" }}>bar_chart</span>
-                <h3 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Public Betting</h3>
+                <h3 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Apuestas Públicas</h3>
               </div>
               <div className="lit-card" style={{ padding:'18px' }}>
                 <div style={{ display:'flex', flexDirection:'column', gap:'16px' }}>
                   {public_betting.map((pb,i) => {
                     const lB = parseFloat(pb.home_pct_bets)||0, rB = parseFloat(pb.away_pct_bets)||0;
                     const lM = parseFloat(pb.home_pct_money)||0, rM = parseFloat(pb.away_pct_money)||0;
-                    const label = pb.bet_type==='moneyline'?'Money Line':pb.bet_type==='spread'?'Spread':'Over/Under';
+                    const label = pb.bet_type==='moneyline'?'Dinero':pb.bet_type==='spread'?'Línea':'Totales';
                     const lL = pb.bet_type==='over_under'?'Over':match.home_short;
                     const rL = pb.bet_type==='over_under'?'Under':match.away_short;
                     return (
                       <div key={i}>
                         <p style={{ fontSize:'9px', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(188,202,187,0.35)', marginBottom:'10px' }}>{label}</p>
-                        <AnimBar lPct={lB} rPct={rB} lLabel={lL} rLabel={rL} barLabel="% Bets"  color="#00ff66" />
+                        <AnimBar lPct={lB} rPct={rB} lLabel={lL} rLabel={rL} barLabel="% Apuestas" color="#00ff66" />
                         <div style={{ marginBottom:'10px' }} />
-                        <AnimBar lPct={lM} rPct={rM} lLabel={lL} rLabel={rL} barLabel="% Money" color="#60a5fa" />
+                        <AnimBar lPct={lM} rPct={rM} lLabel={lL} rLabel={rL} barLabel="% Dinero"   color="#60a5fa" />
                       </div>
                     );
                   })}
@@ -303,7 +303,7 @@ export default function MatchDetail() {
             <div style={{ marginTop:'24px' }}>
               <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'12px' }}>
                 <span className="material-symbols-outlined" style={{ fontSize:'16px', color:'#facc15', fontVariationSettings:"'FILL' 1,'wght' 500" }}>bolt</span>
-                <h3 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Player Props</h3>
+                <h3 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Props de Jugadores</h3>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:'6px' }}>
                 {playerProps.map((prop,i) => (
@@ -338,12 +338,12 @@ export default function MatchDetail() {
 
           {/* Odds Timeline */}
           <div style={{ marginBottom:'24px' }}>
-            <h3 style={{ fontSize:'15px', fontWeight:700, color:'#f0f0f0', margin:'0 0 14px' }}>Odds Timeline</h3>
+            <h3 style={{ fontSize:'15px', fontWeight:700, color:'#f0f0f0', margin:'0 0 14px' }}>Historial de Momios</h3>
             <div className="lit-card" style={{ overflow:'hidden' }}>
               {/* Header row */}
               <div style={{ display:'grid', gridTemplateColumns:'1fr auto auto', gap:'8px', padding:'8px 14px', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                <span style={{ fontSize:'9px', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(188,202,187,0.3)' }}>Updated</span>
-                <span style={{ fontSize:'9px', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(188,202,187,0.3)', minWidth:'80px', textAlign:'right' }}>Odds</span>
+                <span style={{ fontSize:'9px', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(188,202,187,0.3)' }}>Actualizado</span>
+                <span style={{ fontSize:'9px', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(188,202,187,0.3)', minWidth:'80px', textAlign:'right' }}>Momios</span>
                 <span style={{ fontSize:'9px', fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(188,202,187,0.3)', minWidth:'50px', textAlign:'right' }}></span>
               </div>
               {moneyline.map((odd, i) => {
@@ -371,7 +371,7 @@ export default function MatchDetail() {
                           <span style={{ fontSize:'10px', color:'rgba(188,202,187,0.4)', marginLeft:'5px' }}>{row.label}</span>
                         </div>
                         <div style={{ minWidth:'50px', textAlign:'right' }}>
-                          <span style={{ fontSize:'11px', fontWeight:600, color:'rgba(188,202,187,0.3)', fontVariantNumeric:'tabular-nums' }}>Open</span>
+                          <span style={{ fontSize:'11px', fontWeight:600, color:'rgba(188,202,187,0.3)', fontVariantNumeric:'tabular-nums' }}>Apertura</span>
                         </div>
                       </div>
                     ))}
@@ -380,7 +380,7 @@ export default function MatchDetail() {
               })}
               <button style={{ width:'100%', padding:'10px', background:'none', border:'none', borderTop:'1px solid rgba(255,255,255,0.04)', cursor:'pointer', fontSize:'11px', fontWeight:600, letterSpacing:'0.06em', textTransform:'uppercase', color:'rgba(188,202,187,0.35)' }}
                 onMouseEnter={e=>e.currentTarget.style.color='#bccabb'} onMouseLeave={e=>e.currentTarget.style.color='rgba(188,202,187,0.35)'}>
-                Show More
+                Ver más
               </button>
             </div>
           </div>
@@ -399,14 +399,14 @@ export default function MatchDetail() {
                 }}
                   onMouseEnter={e=>{ if(!active) e.currentTarget.style.color='#bccabb'; }}
                   onMouseLeave={e=>{ if(!active) e.currentTarget.style.color='rgba(188,202,187,0.3)'; }}>
-                  {tab === 'matchup' ? 'Matchup' : tab === 'injuries' ? 'Injuries' : 'Insights'}
+                  {tab === 'matchup' ? 'Enfrentamiento' : tab === 'injuries' ? 'Lesionados' : 'Análisis'}
                 </button>
               );
             })}
           </div>
 
           {rightTab === 'matchup' && (
-            <MatchupTab match={match} isSoccer={isSoccer} pitchers={probable_pitchers} batters={team_batters||[]} hasPitchers={hasPitchers} />
+            <MatchupTab match={match} isSoccer={isSoccer} pitchers={probable_pitchers} batters={team_batters||[]} hasPitchers={hasPitchers} batterVsPitcher={batter_vs_pitcher||[]} />
           )}
           {rightTab === 'injuries' && (
             <InjuriesTab injuries={injuries} />
@@ -449,11 +449,11 @@ function RecentGamesSection({ homeGames, awayGames, match, numGames, gamesFilter
   const home = (homeGames||[]).slice(0,numGames);
   const away = (awayGames||[]).slice(0,numGames);
   if (!home.length && !away.length) return (
-    <div className="lit-card" style={{ padding:'24px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>No recent games</div>
+    <div className="lit-card" style={{ padding:'24px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>Sin partidos recientes</div>
   );
 
   const filterTabs = [
-    { id:'all', label:'All games' },
+    { id:'all', label:'Todos' },
     { id:'matchup', label:`${match.home_short} away / ${match.away_short} home` },
   ];
 
@@ -476,7 +476,7 @@ function RecentGamesSection({ homeGames, awayGames, match, numGames, gamesFilter
         </div>
         {/* Starting pitcher toggle - visual only */}
         <button style={{ display:'flex', alignItems:'center', gap:'5px', padding:'4px 9px', borderRadius:'6px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', cursor:'pointer', fontSize:'11px', color:'rgba(188,202,187,0.4)' }}>
-          Starting pitcher
+          Pitcher abridor
           <span className="material-symbols-outlined" style={{ fontSize:'13px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>expand_more</span>
         </button>
       </div>
@@ -530,13 +530,13 @@ function RecentGamesSection({ homeGames, awayGames, match, numGames, gamesFilter
 /* ── H2HSection ──────────────────────────────────────── */
 function H2HSection({ h2h, match }) {
   if (!h2h?.length) return (
-    <div className="lit-card" style={{ padding:'24px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>No H2H history</div>
+    <div className="lit-card" style={{ padding:'24px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>Sin historial H2H</div>
   );
   return (
     <div className="lit-card" style={{ overflow:'hidden' }}>
       <div style={{ padding:'11px 14px', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-        <span style={{ fontSize:'11px', color:'#bccabb', fontWeight:500 }}>Head to Head</span>
-        <span style={{ fontSize:'11px', color:'rgba(188,202,187,0.3)', marginLeft:'6px' }}>· Last {h2h.length} meetings</span>
+        <span style={{ fontSize:'11px', color:'#bccabb', fontWeight:500 }}>Cabeza a Cabeza</span>
+        <span style={{ fontSize:'11px', color:'rgba(188,202,187,0.3)', marginLeft:'6px' }}>· Últimos {h2h.length} encuentros</span>
       </div>
       {h2h.map((record,i) => {
         const isTeamA = record.team_a_id === match.home_team_id;
@@ -566,7 +566,7 @@ function H2HSection({ h2h, match }) {
 }
 
 /* ── MatchupTab (Starting Pitcher + Team Rankings) ───── */
-function MatchupTab({ match, isSoccer, pitchers, batters, hasPitchers }) {
+function MatchupTab({ match, isSoccer, pitchers, batters, hasPitchers, batterVsPitcher }) {
   const [selectedTeam, setSelectedTeam] = useState(match?.away_team_id);
   const homePitcher = pitchers?.find(p => p.team_id === match.home_team_id);
   const awayPitcher = pitchers?.find(p => p.team_id === match.away_team_id);
@@ -591,7 +591,7 @@ function MatchupTab({ match, isSoccer, pitchers, batters, hasPitchers }) {
       {hasPitchers && (
         <div>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
-            <h4 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Starting Pitcher</h4>
+            <h4 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Pitcher Abridor</h4>
             <div style={{ display:'flex', gap:'5px' }}>
               {[match.away_team_id, match.home_team_id].map((tid,i) => {
                 const short = i===0?match.away_short:match.home_short;
@@ -613,60 +613,71 @@ function MatchupTab({ match, isSoccer, pitchers, batters, hasPitchers }) {
 
           {selectedPitcher ? (
             <div className="lit-card" style={{ padding:'14px 16px' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'12px' }}>
+              {/* Pitcher name row */}
+              <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'10px' }}>
                 <div style={{ width:'32px', height:'32px', borderRadius:'50%', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                   <span style={{ fontSize:'10px', fontWeight:700, color:'#bccabb' }}>{selectedPitcher.full_name.split(' ').map(w=>w[0]).slice(0,2).join('')}</span>
                 </div>
-                <div style={{ flex:1 }}>
+                <div style={{ flex:1, minWidth:0 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:'6px' }}>
                     <span style={{ fontSize:'13px', color:'#f0f0f0', fontWeight:600 }}>{abbrevFirst(selectedPitcher.full_name)}</span>
                     {selectedPitcher.throws && <span style={{ fontSize:'10px', color:'rgba(188,202,187,0.4)', background:'rgba(255,255,255,0.05)', padding:'1px 5px', borderRadius:'4px' }}>{selectedPitcher.throws}HP</span>}
-                    {/* external link icon */}
-                    <span className="material-symbols-outlined" style={{ fontSize:'13px', color:'rgba(188,202,187,0.2)', fontVariationSettings:"'FILL' 0,'wght' 300" }}>open_in_new</span>
+                    <span style={{ fontSize:'9px', color:'rgba(188,202,187,0.35)', background:'rgba(255,255,255,0.04)', padding:'1px 6px', borderRadius:'4px' }}>↗ 2026</span>
                   </div>
-                </div>
-                <div style={{ display:'flex', gap:'12px', fontSize:'10px', color:'rgba(188,202,187,0.3)' }}>
-                  <span>{selectedPitcher.season_year}</span>
-                  <span>vs. {isSelectedHome?match.away_short:match.home_short}</span>
                 </div>
               </div>
 
+              {/* Column headers */}
+              <div style={{ display:'flex', alignItems:'center', padding:'5px 0', borderTop:'1px solid rgba(255,255,255,0.06)', borderBottom:'1px solid rgba(255,255,255,0.06)', marginBottom:'2px' }}>
+                <div style={{ flex:1 }} />
+                <div style={{ width:'56px', textAlign:'right', fontSize:'9px', fontWeight:700, color:'rgba(188,202,187,0.5)', textTransform:'uppercase', letterSpacing:'0.07em' }}>{selectedPitcher.season_year || '2026'}</div>
+                <div style={{ width:'64px', textAlign:'right', fontSize:'9px', fontWeight:700, color:'rgba(188,202,187,0.5)', textTransform:'uppercase', letterSpacing:'0.07em' }}>vs. {isSelectedHome ? match.away_short : match.home_short}</div>
+              </div>
+
               {[
-                { label:'Record',           s:`${selectedPitcher.season_wins}-${selectedPitcher.season_losses}`, v:`${selectedPitcher.vs_wins??0}-${selectedPitcher.vs_losses??0}`, better:'neutral' },
-                { label:'Earned runs per 9',s:fmt(selectedPitcher.season_era),    v:fmt(selectedPitcher.vs_era),    better:'lower'   },
-                { label:'Innings pitched',  s:fmt(selectedPitcher.season_ip,1),   v:fmt(selectedPitcher.vs_ip,1),   better:'neutral' },
-                { label:'Hits per 9',       s:fmt(selectedPitcher.season_hits_per9),v:fmt(selectedPitcher.vs_hits_per9),better:'lower'},
-                { label:'Strikeouts per 9', s:fmt(selectedPitcher.season_k_per9), v:fmt(selectedPitcher.vs_k_per9), better:'higher'  },
-                { label:'WHIP',             s:fmt(selectedPitcher.season_whip),   v:fmt(selectedPitcher.vs_whip),   better:'lower'   },
+                { label:'Record',            s:`${selectedPitcher.season_wins}-${selectedPitcher.season_losses}`, v:`${selectedPitcher.vs_wins??0}-${selectedPitcher.vs_losses??0}`, better:'neutral' },
+                { label:'Earned runs per 9', s:fmt(selectedPitcher.season_era),           v:fmt(selectedPitcher.vs_era),           better:'lower'   },
+                { label:'Innings pitched',   s:fmt(selectedPitcher.season_ip,1),          v:fmt(selectedPitcher.vs_ip,1),          better:'neutral' },
+                { label:'Hits per 9',        s:fmt(selectedPitcher.season_hits_per9),     v:fmt(selectedPitcher.vs_hits_per9),     better:'lower'   },
+                { label:'Strikeouts per 9',  s:fmt(selectedPitcher.season_k_per9),        v:fmt(selectedPitcher.vs_k_per9),        better:'higher'  },
+                { label:'Walks plus hits per inning pitched', s:fmt(selectedPitcher.season_whip), v:fmt(selectedPitcher.vs_whip), better:'lower' },
               ].map((r,i) => {
                 const tone = compareTone(r.s, r.v, r.better);
                 return (
                   <div key={i} style={{ display:'flex', alignItems:'center', padding:'7px 0', borderTop:'1px solid rgba(255,255,255,0.04)' }}>
-                    <div style={{ flex:1, fontSize:'12px', color:'#bccabb' }}>{r.label}</div>
-                    <div style={{ width:'52px', textAlign:'right', fontSize:'12px', color:'#f0f0f0', fontWeight:600, fontVariantNumeric:'tabular-nums' }}>{r.s}</div>
-                    <div style={{ width:'52px', textAlign:'right', fontSize:'12px', fontWeight:600, fontVariantNumeric:'tabular-nums', color: tone==='good'?'#6bfb9a':tone==='bad'?'#f87171':'rgba(188,202,187,0.35)' }}>{r.v === '0.00' ? '-' : r.v}</div>
+                    <div style={{ flex:1, fontSize:'11.5px', color:'#bccabb' }}>{r.label}</div>
+                    <div style={{ width:'56px', textAlign:'right', fontSize:'12px', color:'#f0f0f0', fontWeight:600, fontVariantNumeric:'tabular-nums' }}>{r.s}</div>
+                    <div style={{ width:'64px', textAlign:'right', fontSize:'12px', fontWeight:600, fontVariantNumeric:'tabular-nums', color: tone==='good'?'#6bfb9a':tone==='bad'?'#f87171':'rgba(188,202,187,0.35)' }}>{r.v === '0.00' ? '-' : r.v}</div>
                   </div>
                 );
               })}
               <div style={{ marginTop:'10px', paddingTop:'8px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', gap:'6px' }}>
                 <div style={{ width:'10px', height:'10px', borderRadius:'2px', background:'#6bfb9a' }} />
-                <span style={{ fontSize:'10px', color:'rgba(188,202,187,0.35)' }}>— compared to season stats</span>
+                <span style={{ fontSize:'10px', color:'rgba(188,202,187,0.35)' }}>— comparado con stats de temporada</span>
               </div>
             </div>
           ) : (
-            <div className="lit-card" style={{ padding:'16px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>No pitcher announced yet</div>
+            <div className="lit-card" style={{ padding:'16px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>Pitcher aún no anunciado</div>
           )}
 
-          {/* Bullpen stats if batters exist */}
-          {selectedBatters.length > 0 && opposingPitcher && (
-            <BatterBlock batters={selectedBatters} pitcherThrows={opposingPitcher.throws} teamShort={isSelectedHome?match.home_short:match.away_short} season={opposingPitcher.season_year} />
+          {/* Batter stats vs opposing pitcher */}
+          {selectedBatters.length > 0 && (
+            <BatterBlock
+              batters={selectedBatters}
+              pitcherThrows={opposingPitcher?.throws}
+              pitcherName={opposingPitcher?.full_name}
+              pitcherMlbId={opposingPitcher?.mlb_player_id}
+              vsPitcherRows={(batterVsPitcher||[]).filter(r => r.batter_team_id === selectedTeam)}
+              teamShort={isSelectedHome ? match.home_short : match.away_short}
+              season={opposingPitcher?.season_year}
+            />
           )}
         </div>
       )}
 
       {/* Team Rankings */}
       <div>
-        <h4 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:'0 0 10px' }}>Team Rankings ({new Date().getFullYear()})</h4>
+        <h4 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:'0 0 10px' }}>Ranking de Equipos ({new Date().getFullYear()})</h4>
         <div className="lit-card" style={{ overflow:'hidden' }}>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
@@ -702,57 +713,112 @@ function MatchupTab({ match, isSoccer, pitchers, batters, hasPitchers }) {
 }
 
 /* ── BatterBlock ─────────────────────────────────────── */
-function BatterBlock({ batters, pitcherThrows, teamShort, season }) {
-  const [tab, setTab] = useState('split');
+const BATTER_COLS = '1fr 34px 40px 26px 28px 40px 32px';
+
+function BatterRow({ name, ab, avg, hr, rbi, ops, kpct }) {
+  return (
+    <div style={{ display:'grid', gridTemplateColumns:BATTER_COLS, gap:0, alignItems:'center', padding:'7px 0', borderTop:'1px solid rgba(255,255,255,0.04)', fontSize:'11.5px' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:'6px', minWidth:0 }}>
+        <div style={{ width:'18px', height:'18px', borderRadius:'50%', background:'rgba(255,255,255,0.06)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <span style={{ fontSize:'7px', fontWeight:700, color:'rgba(188,202,187,0.4)' }}>{(name||'').split(' ').map(w=>w[0]).slice(0,2).join('')}</span>
+        </div>
+        <span style={{ color:'#f0f0f0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{shortName(name)}</span>
+        <span style={{ fontSize:'9px', color:'rgba(107,251,154,0.5)', flexShrink:0 }}>↗</span>
+      </div>
+      <div style={{ textAlign:'right', color:'rgba(188,202,187,0.4)', fontVariantNumeric:'tabular-nums' }}>{ab ?? '-'}</div>
+      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{fmtAvg(avg)}</div>
+      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{hr ?? '-'}</div>
+      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{rbi ?? '-'}</div>
+      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{fmtAvg(ops)}</div>
+      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'rgba(188,202,187,0.5)' }}>{kpct != null ? `${parseFloat(kpct).toFixed(1)}%` : '-'}</div>
+    </div>
+  );
+}
+
+function BatterColHeaders() {
+  return (
+    <div style={{ display:'grid', gridTemplateColumns:BATTER_COLS, gap:0, padding:'6px 14px 4px', fontSize:'9px', fontWeight:700, color:'rgba(188,202,187,0.3)', textTransform:'uppercase', letterSpacing:'0.06em' }}>
+      <div /><div style={{textAlign:'right'}}>AB</div><div style={{textAlign:'right'}}>AVG</div><div style={{textAlign:'right'}}>HR</div><div style={{textAlign:'right'}}>RBI</div><div style={{textAlign:'right'}}>OPS</div><div style={{textAlign:'right'}}>K%</div>
+    </div>
+  );
+}
+
+function BatterBlock({ batters, pitcherThrows, pitcherName, vsPitcherRows, teamShort, season }) {
+  const [tab, setTab] = useState('season');
   const isRhp = pitcherThrows === 'R';
-  const splitLabel = isRhp ? 'vs. RHP' : 'vs. LHP';
-  const rows = batters.slice().sort((a,b)=>(b.season_ab||0)-(a.season_ab||0)).slice(0,8).map(b => {
-    const split = isRhp
-      ? { ab:b.vr_ab, avg:b.vr_avg, hr:b.vr_hr, rbi:b.vr_rbi, ops:b.vr_ops }
-      : { ab:b.vl_ab, avg:b.vl_avg, hr:b.vl_hr, rbi:b.vl_rbi, ops:b.vl_ops };
-    const overall = { ab:b.season_ab, avg:b.season_avg, hr:b.season_hr, rbi:b.season_rbi, ops:b.season_ops };
-    return { b, overall, split };
-  });
-  const pStats = r => tab==='overall' ? r.overall : r.split;
+  const splitLabel = isRhp ? `vs. RHP (${season || '2026'})` : `vs. LHP (${season || '2026'})`;
+
+  const seasonFrom = vsPitcherRows?.length
+    ? Math.min(...vsPitcherRows.map(r => r.season_from).filter(Boolean))
+    : null;
+  const pitcherTabLabel = pitcherName
+    ? `vs. ${abbrevFirst(pitcherName)}${seasonFrom ? ` (${seasonFrom})` : ''}`
+    : null;
+
+  const sortedBatters = batters.slice().sort((a,b)=>(b.season_ab||0)-(a.season_ab||0)).slice(0,9);
+
+  // vs pitcher rows indexed by mlb_batter_id
+  const vspMap = new Map((vsPitcherRows||[]).map(r => [r.mlb_batter_id, r]));
+
+  const tabs = [
+    { id:'season', label: season || '2026' },
+    { id:'split',  label: splitLabel },
+    ...(pitcherTabLabel ? [{ id:'vspitcher', label: pitcherTabLabel }] : []),
+  ];
 
   return (
     <div className="lit-card" style={{ overflow:'hidden', marginTop:'12px' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px 6px' }}>
-        <span style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0' }}>Bullpen Stats</span>
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px 0' }}>
+        <span style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0' }}>Batter Stats</span>
         <span style={{ fontSize:'9px', fontWeight:700, color:'#f0f0f0', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'99px', padding:'2px 8px' }}>{teamShort}</span>
       </div>
-      <div style={{ display:'flex', borderBottom:'1px solid rgba(255,255,255,0.04)', padding:'0 14px' }}>
-        {[['overall',season],['split',`${splitLabel}`]].map(([t,lbl]) => (
-          <button key={t} onClick={() => setTab(t)} style={{
-            padding:'6px 0', marginRight:'16px', fontSize:'11px', fontWeight:tab===t?600:500,
-            background:'none', border:'none', cursor:'pointer',
-            borderBottom:tab===t?'2px solid #f0f0f0':'2px solid transparent',
-            color:tab===t?'#f0f0f0':'rgba(188,202,187,0.35)',
-            marginBottom:'-1px', whiteSpace:'nowrap', transition:'color 120ms',
-          }}>{lbl}</button>
-        ))}
-      </div>
-      <div style={{ display:'grid', gridTemplateColumns:'1.4fr 0.5fr 0.6fr 0.4fr 0.4fr 0.7fr', gap:'4px', padding:'8px 14px 4px', fontSize:'9px', fontWeight:700, color:'rgba(188,202,187,0.3)', textTransform:'uppercase', letterSpacing:'0.08em' }}>
-        <div/><div style={{textAlign:'right'}}>AB</div><div style={{textAlign:'right'}}>AVG</div><div style={{textAlign:'right'}}>HR</div><div style={{textAlign:'right'}}>RBI</div><div style={{textAlign:'right'}}>OPS</div>
-      </div>
-      <div style={{ padding:'0 14px 10px' }}>
-        {rows.map((r,i) => {
-          const s = pStats(r);
+
+      {/* Tabs */}
+      <div style={{ display:'flex', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'0 14px', gap:0, overflowX:'auto' }}>
+        {tabs.map(t => {
+          const active = tab === t.id;
           return (
-            <div key={i} style={{ display:'grid', gridTemplateColumns:'1.4fr 0.5fr 0.6fr 0.4fr 0.4fr 0.7fr', gap:'4px', alignItems:'center', padding:'7px 0', borderTop:'1px solid rgba(255,255,255,0.04)', fontSize:'12px' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:'6px', minWidth:0 }}>
-                <div style={{ width:'16px', height:'16px', borderRadius:'50%', background:'rgba(255,255,255,0.06)', flexShrink:0 }} />
-                <span style={{ color:'#f0f0f0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{shortName(r.b.full_name)}</span>
-              </div>
-              <div style={{ textAlign:'right', color:'rgba(188,202,187,0.4)', fontVariantNumeric:'tabular-nums' }}>{s.ab??'-'}</div>
-              <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{fmtAvg(s.avg)}</div>
-              <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{s.hr??'-'}</div>
-              <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{s.rbi??'-'}</div>
-              <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{fmtAvg(s.ops)}</div>
-            </div>
+            <button key={t.id} onClick={() => setTab(t.id)} style={{
+              padding:'8px 0', marginRight:'14px', fontSize:'11px', fontWeight: active ? 600 : 500,
+              background:'none', border:'none', cursor:'pointer',
+              borderBottom: active ? '2px solid #f0f0f0' : '2px solid transparent',
+              color: active ? '#f0f0f0' : 'rgba(188,202,187,0.35)',
+              marginBottom:'-1px', whiteSpace:'nowrap', flexShrink:0,
+              transition:'color 120ms',
+            }}>{t.label}</button>
           );
         })}
-        {!rows.length && <p style={{ fontSize:'12px', color:'#bccabb', textAlign:'center', padding:'12px 0' }}>No batter data</p>}
+      </div>
+
+      <BatterColHeaders />
+
+      <div style={{ padding:'0 14px 10px' }}>
+        {tab === 'season' && sortedBatters.map((b,i) => (
+          <BatterRow key={i} name={b.full_name} ab={b.season_ab} avg={b.season_avg} hr={b.season_hr} rbi={b.season_rbi} ops={b.season_ops} kpct={b.season_k_pct} />
+        ))}
+
+        {tab === 'split' && sortedBatters.map((b,i) => {
+          const s = isRhp
+            ? { ab:b.vr_ab, avg:b.vr_avg, hr:b.vr_hr, rbi:b.vr_rbi, ops:b.vr_ops, kpct:b.vr_k_pct }
+            : { ab:b.vl_ab, avg:b.vl_avg, hr:b.vl_hr, rbi:b.vl_rbi, ops:b.vl_ops, kpct:b.vl_k_pct };
+          return <BatterRow key={i} name={b.full_name} {...s} />;
+        })}
+
+        {tab === 'vspitcher' && sortedBatters.map((b,i) => {
+          const vsp = vspMap.get(b.mlb_player_id);
+          return <BatterRow key={i} name={b.full_name}
+            ab={vsp?.ab ?? null} avg={vsp?.avg ?? null} hr={vsp?.hr ?? null}
+            rbi={vsp?.rbi ?? null} ops={vsp?.ops ?? null} kpct={vsp?.k_pct ?? null}
+          />;
+        })}
+
+        {!sortedBatters.length && <p style={{ fontSize:'12px', color:'#bccabb', textAlign:'center', padding:'12px 0' }}>Sin datos de bateadores</p>}
+      </div>
+
+      <div style={{ padding:'6px 14px 10px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', gap:'6px' }}>
+        <div style={{ width:'10px', height:'10px', borderRadius:'2px', background:'#6bfb9a' }} />
+        <span style={{ fontSize:'10px', color:'rgba(188,202,187,0.35)' }}>— comparado con stats de temporada</span>
       </div>
     </div>
   );
@@ -761,7 +827,7 @@ function BatterBlock({ batters, pitcherThrows, teamShort, season }) {
 /* ── InjuriesTab ─────────────────────────────────────── */
 function InjuriesTab({ injuries }) {
   if (!injuries?.length) return (
-    <div style={{ padding:'24px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>No injury reports</div>
+    <div style={{ padding:'24px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>Sin reportes de lesiones</div>
   );
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
@@ -794,12 +860,12 @@ function InsightsTab({ match, homeWinPct, awayWinPct, h2h, homeRecord, awayRecor
   const h2hHomeWins = (h2h||[]).filter(g => { const a = g.team_a_id===match.home_team_id; return a?g.score_a>g.score_b:g.score_b>g.score_a; }).length;
   const h2hTotal = h2h?.length||0;
   const insights = [
-    { type: homeWinPct>awayWinPct?'positive':'neutral', text:`${match.home_team} has won ${homeWinPct}% of their last 10 games (${homeRecord} overall).` },
-    { type: awayWinPct>homeWinPct?'positive':'neutral', text:`${match.away_team} has won ${awayWinPct}% of their last 10 games (${awayRecord} overall).` },
-    h2hTotal>0&&{ type: h2hHomeWins>h2hTotal/2?'positive':'warning', text:`${match.home_team} has won ${h2hHomeWins} of the last ${h2hTotal} H2H matchups.` },
-    homeWinPct>=60&&{ type:'positive', text:`${match.home_short} is on a hot streak with a ${homeWinPct}% win rate recently.` },
-    awayWinPct<=40&&{ type:'warning',  text:`${match.away_short} has been struggling — only ${awayWinPct}% wins in last 10.` },
-    { type:'neutral', text:`This match is at ${match.venue}. Home teams win ~55% of games.` },
+    { type: homeWinPct>awayWinPct?'positive':'neutral', text:`${match.home_team} ha ganado el ${homeWinPct}% de sus últimos 10 partidos (${homeRecord} en temporada).` },
+    { type: awayWinPct>homeWinPct?'positive':'neutral', text:`${match.away_team} ha ganado el ${awayWinPct}% de sus últimos 10 partidos (${awayRecord} en temporada).` },
+    h2hTotal>0&&{ type: h2hHomeWins>h2hTotal/2?'positive':'warning', text:`${match.home_team} ha ganado ${h2hHomeWins} de los últimos ${h2hTotal} enfrentamientos directos.` },
+    homeWinPct>=60&&{ type:'positive', text:`${match.home_short} viene en racha con un ${homeWinPct}% de victorias recientes.` },
+    awayWinPct<=40&&{ type:'warning',  text:`${match.away_short} ha tenido dificultades — solo ${awayWinPct}% de victorias en los últimos 10.` },
+    { type:'neutral', text:`Este partido se juega en ${match.venue}. Los equipos locales ganan ~55% de los juegos.` },
   ].filter(Boolean);
   const iconMap = { positive:'trending_up', warning:'trending_down', neutral:'bar_chart' };
   const colMap  = { positive:'#6bfb9a', warning:'#f87171', neutral:'rgba(188,202,187,0.3)' };
@@ -807,7 +873,7 @@ function InsightsTab({ match, homeWinPct, awayWinPct, h2h, homeRecord, awayRecor
   const bdrMap  = { positive:'rgba(107,251,154,0.12)', warning:'rgba(248,113,113,0.12)', neutral:'rgba(255,255,255,0.05)' };
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'8px' }}>
-      <h3 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:'0 0 4px' }}>Key Insights</h3>
+      <h3 style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0', margin:'0 0 4px' }}>Puntos Clave</h3>
       {insights.map((ins,i) => (
         <div key={i} style={{ padding:'11px 13px', borderRadius:'10px', background:bgMap[ins.type], border:`1px solid ${bdrMap[ins.type]}`, fontSize:'12px', color:'#bccabb', lineHeight:1.5, display:'flex', gap:'8px' }}>
           <span className="material-symbols-outlined" style={{ fontSize:'14px', color:colMap[ins.type], flexShrink:0, marginTop:'1px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>{iconMap[ins.type]}</span>

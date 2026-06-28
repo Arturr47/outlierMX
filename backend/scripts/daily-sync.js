@@ -31,6 +31,7 @@ async function cleanupOldMatches(keepFromDate) {
     await client.query(`DELETE FROM lineups             WHERE ${dateFilter}`, [keepFromDate]);
     await client.query(`DELETE FROM odds                WHERE ${dateFilter}`, [keepFromDate]);
     await client.query(`DELETE FROM probable_pitchers   WHERE ${dateFilter}`, [keepFromDate]);
+    await client.query(`DELETE FROM batter_vs_pitcher   WHERE ${dateFilter}`, [keepFromDate]);
     const r = await client.query(
       `DELETE FROM matches WHERE league_id=3 AND DATE(match_date AT TIME ZONE 'America/Mexico_City') < $1`,
       [keepFromDate]

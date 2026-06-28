@@ -2,11 +2,11 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const NAV = [
-  { to: '/dashboard',           icon: 'grid_view',        label: 'Dashboard', end: true },
-  { to: '/dashboard/games',     icon: 'sports_baseball',  label: 'Games' },
-  { to: '/dashboard/picks',     icon: 'bookmark',         label: 'My Picks' },
-  { to: '/dashboard/ev',        icon: 'trending_up',      label: 'EV Finder' },
-  { to: '/dashboard/arbitrage', icon: 'swap_horiz',       label: 'Arbitrage' },
+  { to: '/dashboard',           icon: 'grid_view',        label: 'Inicio', end: true },
+  { to: '/dashboard/games',     icon: 'sports_baseball',  label: 'Partidos' },
+  { to: '/dashboard/picks',     icon: 'bookmark',         label: 'Mis Picks' },
+  { to: '/dashboard/ev',        icon: 'trending_up',      label: 'Valor Esperado' },
+  { to: '/dashboard/arbitrage', icon: 'swap_horiz',       label: 'Arbitraje' },
   { to: '/dashboard/middle',    icon: 'center_focus_weak',label: 'Middles' },
 ];
 
@@ -127,7 +127,7 @@ export default function Sidebar() {
           onMouseLeave={e => e.currentTarget.style.boxShadow = '0 0 20px rgba(107,251,154,0.25), 0 4px 12px rgba(107,251,154,0.15)'}
         >
           <span className="material-symbols-outlined" style={{ fontSize: '16px', fontVariationSettings: "'FILL' 1, 'wght' 500" }}>bolt</span>
-          Place Quick Bet
+          Apuesta Rápida
         </button>
 
         <button style={{
@@ -138,7 +138,7 @@ export default function Sidebar() {
           width: '100%', letterSpacing: 0,
         }}>
           <span className="material-symbols-outlined" style={{ fontSize: '17px', color: 'rgba(188,202,187,0.4)', fontVariationSettings: "'FILL' 0, 'wght' 300" }}>help</span>
-          Support
+          Soporte
         </button>
 
         <button
@@ -152,7 +152,7 @@ export default function Sidebar() {
           }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: '17px', color: 'rgba(188,202,187,0.4)', fontVariationSettings: "'FILL' 0, 'wght' 300" }}>logout</span>
-          Sign Out
+          Cerrar Sesión
         </button>
       </div>
     </aside>

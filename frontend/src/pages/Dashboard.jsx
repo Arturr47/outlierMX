@@ -10,8 +10,8 @@ function buildDates() {
     d.setDate(d.getDate() + i);
     return {
       iso: i === 0 ? '' : d.toISOString().split('T')[0],
-      label: i === 0 ? 'Today' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      weekday: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      label: i === 0 ? 'Hoy' : d.toLocaleDateString('es-MX', { month: 'short', day: 'numeric' }),
+      weekday: d.toLocaleDateString('es-MX', { weekday: 'short' }),
     };
   });
 }
@@ -50,7 +50,7 @@ export default function Dashboard() {
         fontSize: '32px', fontWeight: 700, color: '#fff',
         letterSpacing: '-0.03em', marginBottom: '20px', lineHeight: 1,
       }}>
-        Games
+        Partidos
       </h1>
 
       {/* Date tabs */}
@@ -89,7 +89,7 @@ export default function Dashboard() {
         </div>
       ) : matches.length === 0 ? (
         <div style={{ textAlign: 'center', paddingTop: '80px', color: 'rgba(255,255,255,0.25)', fontSize: '14px' }}>
-          No games scheduled
+          Sin partidos programados
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
