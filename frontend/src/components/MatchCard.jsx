@@ -89,6 +89,8 @@ export default function MatchCard({ match }) {
   const { toggle, has } = useWatchlist();
   const [pbOpen, setPbOpen] = useState(false);
   const [barReady, setBarReady] = useState(false);
+  const [bookmarkAnim, setBookmarkAnim] = useState(false);
+  const [flashedPill, setFlashedPill] = useState(null);
 
   useEffect(() => { const t = setTimeout(() => setBarReady(true), 60); return () => clearTimeout(t); }, []);
 
@@ -123,6 +125,16 @@ export default function MatchCard({ match }) {
       match_date: match.match_date,
       league: match.league || 'mlb',
     });
+    setBookmarkAnim(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => setBookmarkAnim(true)));
+    setTimeout(() => setBookmarkAnim(false), 420);
+  };
+
+  const handlePillClick = (pillKey, cb) => {
+    setFlashedPill(null);
+    requestAnimationFrame(() => requestAnimationFrame(() => setFlashedPill(pillKey)));
+    setTimeout(() => setFlashedPill(null), 450);
+    if (cb) cb();
   };
 
   return (
@@ -143,7 +155,7 @@ export default function MatchCard({ match }) {
           <button
             type="button"
             onClick={handleSave}
-            className={`watchlist-btn${saved ? ' saved' : ''}`}
+            className={`watchlist-btn${saved ? ' saved' : ''}${bookmarkAnim ? ' anim-bookmark-pop' : ''}`}
             title={saved ? 'Quitar de lista' : 'Guardar en lista'}
             aria-label={saved ? 'Quitar de lista' : 'Guardar en lista'}
           >
@@ -182,8 +194,8 @@ export default function MatchCard({ match }) {
 
         <div className="match-odds-grid hide-scroll">
           <OddsColumn title="Moneyline" hint="Ganador directo">
-            <OddsPill label={match.home_short} value={fmtOdds(bestH?.home_odds)} meta={bestH?.sportsbook} />
-            <OddsPill label={match.away_short} value={fmtOdds(bestA?.away_odds)} meta={bestA?.sportsbook} />
+            <OddsPill key={`mh-${match.id}`} label={match.home_short} value={fmtOdds(bestH?.home_odds)} meta={bestH?.sportsbook} flash={flashedPill === `mh-${match.id}`} onFlash={() => handlePillClick(`mh-${match.id}`)} />
+            <OddsPill key={`ma-${match.id}`} label={match.away_short} value={fmtOdds(bestA?.away_odds)} meta={bestA?.sportsbook} flash={flashedPill === `ma-${match.id}`} onFlash={() => handlePillClick(`ma-${match.id}`)} />
           </OddsColumn>
 
           <div style={{ width: 1, background: 'rgba(255,255,255,0.05)', flexShrink: 0 }} />
@@ -191,8 +203,8 @@ export default function MatchCard({ match }) {
           <OddsColumn title="Línea" hint="Margen ajustado">
             {spread ? (
               <>
-                <OddsPill label={`${match.home_short} ${fmtLine(homeLine)}`} value={fmtOdds(spread.home_odds)} />
-                <OddsPill label={`${match.away_short} ${fmtLine(awayLine)}`} value={fmtOdds(spread.away_odds)} />
+                <OddsPill key={`lh-${match.id}`} label={`${match.home_short} ${fmtLine(homeLine)}`} value={fmtOdds(spread.home_odds)} flash={flashedPill === `lh-${match.id}`} onFlash={() => handlePillClick(`lh-${match.id}`)} />
+                <OddsPill key={`la-${match.id}`} label={`${match.away_short} ${fmtLine(awayLine)}`} value={fmtOdds(spread.away_odds)} flash={flashedPill === `la-${match.id}`} onFlash={() => handlePillClick(`la-${match.id}`)} />
               </>
             ) : (
               <>
@@ -207,8 +219,8 @@ export default function MatchCard({ match }) {
           <OddsColumn title="Totales" hint="Carreras esperadas">
             {total ? (
               <>
-                <OddsPill label={`Más ${total.total_value}`} value={fmtOdds(total.over_odds)} />
-                <OddsPill label={`Menos ${total.total_value}`} value={fmtOdds(total.under_odds)} />
+                <OddsPill key={`to-${match.id}`} label={`Más ${total.total_value}`} value={fmtOdds(total.over_odds)} flash={flashedPill === `to-${match.id}`} onFlash={() => handlePillClick(`to-${match.id}`)} />
+                <OddsPill key={`tu-${match.id}`} label={`Menos ${total.total_value}`} value={fmtOdds(total.under_odds)} flash={flashedPill === `tu-${match.id}`} onFlash={() => handlePillClick(`tu-${match.id}`)} />
               </>
             ) : (
               <>
@@ -281,8 +293,16 @@ export default function MatchCard({ match }) {
           }}
           onClick={() => setPbOpen(v => !v)}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 14, fontVariationSettings: "'FILL' 0, 'wght' 300" }}>
-            {pbOpen ? 'expand_less' : 'expand_more'}
+          <span
+            className="material-symbols-outlined"
+            style={{
+              fontSize: 14,
+              fontVariationSettings: "'FILL' 0, 'wght' 300",
+              transition: 'transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+              transform: pbOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          >
+            expand_more
           </span>
           Apuestas públicas
         </button>
@@ -363,9 +383,13 @@ function StreakBadge({ streak }) {
   );
 }
 
-function OddsPill({ label, value, meta }) {
+function OddsPill({ label, value, meta, flash, onFlash }) {
   return (
-    <div className="odds-pill" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', gap: 8 }}>
+    <div
+      className={`odds-pill${flash ? ' anim-pill-flash' : ''}`}
+      onClick={onFlash}
+      style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', gap: 8 }}
+    >
       <div style={{ minWidth: 0 }}>
         <span style={{ display: 'block', fontSize: '11.5px', fontWeight: 700, color: 'var(--muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {label}

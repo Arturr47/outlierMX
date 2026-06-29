@@ -82,6 +82,7 @@ export default function Dashboard() {
   const [date, setDate] = useState('');
 
   const dates = useMemo(buildDates, []);
+  const [dateAnim, setDateAnim] = useState(null);
   const lastUpdated = useMemo(() => {
     const times = matches.flatMap(m => m.odds || []).map(o => new Date(o.updated_at).getTime()).filter(Boolean);
     return times.length ? new Date(Math.max(...times)) : null;
@@ -230,8 +231,13 @@ export default function Dashboard() {
             <button
               key={d.iso}
               type="button"
-              onClick={() => setDate(d.iso)}
-              className={`date-tab${date === d.iso ? ' is-active' : ''}`}
+              onClick={() => {
+                setDate(d.iso);
+                setDateAnim(null);
+                requestAnimationFrame(() => requestAnimationFrame(() => setDateAnim(d.iso)));
+                setTimeout(() => setDateAnim(null), 250);
+              }}
+              className={`date-tab${date === d.iso ? ' is-active' : ''}${dateAnim === d.iso ? ' anim-chip-select' : ''}`}
             >
               <strong>{d.label}</strong>
               <span>{d.weekday}</span>

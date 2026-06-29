@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
 import MatchCard from '../components/MatchCard';
 import SkeletonCard from '../components/SkeletonCard';
@@ -31,6 +31,14 @@ export default function Popular() {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [threshold, setThreshold] = useState(0);
+  const [chipAnim, setChipAnim] = useState(null);
+
+  const selectChip = useCallback(min => {
+    setThreshold(min);
+    setChipAnim(null);
+    requestAnimationFrame(() => requestAnimationFrame(() => setChipAnim(min)));
+    setTimeout(() => setChipAnim(null), 300);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -95,7 +103,7 @@ export default function Popular() {
           <button
             key={t.min}
             type="button"
-            onClick={() => setThreshold(t.min)}
+            onClick={() => selectChip(t.min)}
             style={{
               padding: '6px 14px',
               border: `1px solid ${threshold === t.min ? 'var(--public-border)' : 'var(--line)'}`,
@@ -106,6 +114,7 @@ export default function Popular() {
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 130ms ease',
+              animation: chipAnim === t.min ? 'chipSelect 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both' : 'none',
             }}
           >
             {t.label}

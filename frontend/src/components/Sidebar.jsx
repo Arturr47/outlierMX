@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import HelpModal from './HelpModal';
@@ -19,12 +19,19 @@ const NAV_TOOLS = [
 ];
 
 function NavItem({ item }) {
+  const [anim, setAnim] = useState(false);
+  const handleClick = () => {
+    setAnim(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => setAnim(true)));
+    setTimeout(() => setAnim(false), 260);
+  };
   return (
     <NavLink
       to={item.to}
       end={item.end}
-      className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}
+      className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}${anim ? ' anim-nav-pop' : ''}`}
       title={item.label}
+      onClick={handleClick}
     >
       <span className="material-symbols-outlined app-nav-icon">{item.icon}</span>
       <span>{item.label}</span>
@@ -36,6 +43,20 @@ export default function Sidebar() {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [helpOpen, setHelpOpen] = useState(false);
+  const [pickAnim, setPickAnim] = useState(false);
+  const [helpAnim, setHelpAnim] = useState(false);
+
+  const handleNewPick = () => {
+    setPickAnim(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => setPickAnim(true)));
+    setTimeout(() => { setPickAnim(false); navigate('/dashboard/picks'); }, 180);
+  };
+
+  const handleHelp = () => {
+    setHelpAnim(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => setHelpAnim(true)));
+    setTimeout(() => { setHelpAnim(false); setHelpOpen(true); }, 160);
+  };
 
   return (
     <>
@@ -59,10 +80,10 @@ export default function Sidebar() {
           <button
             className="primary-action"
             type="button"
-            onClick={() => navigate('/dashboard/picks')}
+            onClick={handleNewPick}
           >
             <span
-              className="material-symbols-outlined"
+              className={`material-symbols-outlined${pickAnim ? ' anim-icon-spin' : ''}`}
               style={{ fontSize: 15, fontVariationSettings: "'FILL' 1, 'wght' 600" }}
             >
               add
@@ -70,8 +91,8 @@ export default function Sidebar() {
             Nuevo Pick
           </button>
 
-          <button className="sidebar-ghost" type="button" onClick={() => setHelpOpen(true)}>
-            <span className="material-symbols-outlined app-nav-icon">school</span>
+          <button className="sidebar-ghost" type="button" onClick={handleHelp}>
+            <span className={`material-symbols-outlined app-nav-icon${helpAnim ? ' anim-icon-spin' : ''}`}>school</span>
             Glosario
           </button>
 

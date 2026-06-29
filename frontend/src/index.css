@@ -140,6 +140,106 @@ input:focus-visible {
   to { transform: rotate(360deg); }
 }
 
+/* ── Microinteraction keyframes ─────────────────────── */
+@keyframes bookmarkPop {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.35); }
+  65%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
+
+@keyframes pillFlash {
+  0%   { background: rgba(126, 227, 154, 0.22); border-color: rgba(126, 227, 154, 0.5); }
+  100% { background: rgba(255, 255, 255, 0.040); border-color: rgba(255, 255, 255, 0.055); }
+}
+
+@keyframes tabSlide {
+  from { opacity: 0.5; transform: translateY(2px); }
+  to   { opacity: 1;   transform: translateY(0); }
+}
+
+@keyframes chipSelect {
+  0%   { transform: scale(0.94); }
+  60%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes navPop {
+  0%   { transform: scale(0.97) translateX(-2px); }
+  60%  { transform: scale(1.02) translateX(1px); }
+  100% { transform: scale(1)    translateX(0); }
+}
+
+@keyframes iconSpin {
+  from { transform: rotate(0deg) scale(0.85); }
+  to   { transform: rotate(360deg) scale(1); }
+}
+
+/* ── Global press states ────────────────────────────── */
+button:active,
+a:active {
+  transform: scale(0.96);
+  transition: transform 80ms ease !important;
+}
+
+/* Override for elements with their own active style */
+.primary-action:active {
+  transform: scale(0.97) translateY(0) !important;
+}
+
+.watchlist-btn:active {
+  transform: scale(0.88) !important;
+}
+
+.icon-button:active {
+  transform: scale(0.90) !important;
+}
+
+.odds-pill:active {
+  transform: scale(0.97) !important;
+}
+
+.date-tab:active {
+  transform: scale(0.95) !important;
+}
+
+.league-tab:active {
+  transform: scale(0.95) !important;
+}
+
+.app-nav-link:active {
+  transform: scale(0.97) translateX(-1px) !important;
+}
+
+.empty-state-cta:active {
+  transform: scale(0.96) !important;
+}
+
+/* ── Named animation classes applied by JS ──────────── */
+.anim-bookmark-pop {
+  animation: bookmarkPop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both !important;
+}
+
+.anim-pill-flash {
+  animation: pillFlash 0.4s ease-out both;
+}
+
+.anim-tab-slide {
+  animation: tabSlide 0.18s ease both;
+}
+
+.anim-chip-select {
+  animation: chipSelect 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.anim-nav-pop {
+  animation: navPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.anim-icon-spin {
+  animation: iconSpin 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* ── App shell ───────────────────────────────────── */
 .app-shell {
   min-height: 100vh;
