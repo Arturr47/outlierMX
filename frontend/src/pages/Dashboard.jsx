@@ -61,9 +61,10 @@ function buildInsights(matches) {
 }
 
 function filterMatches(matches, query) {
-  if (!query.trim()) return matches;
+  const active = matches.filter(m => m.status !== 'finished');
+  if (!query.trim()) return active;
   const q = query.toLowerCase();
-  return matches.filter(m =>
+  return active.filter(m =>
     m.home_team?.toLowerCase().includes(q) ||
     m.away_team?.toLowerCase().includes(q) ||
     m.home_short?.toLowerCase().includes(q) ||
@@ -89,6 +90,7 @@ export default function Dashboard() {
   }, [matches]);
   const insights = useMemo(() => buildInsights(matches), [matches]);
   const filtered = useMemo(() => filterMatches(matches, search || ''), [matches, search]);
+  const finishedCount = useMemo(() => matches.filter(m => m.status === 'finished').length, [matches]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -254,12 +256,20 @@ export default function Dashboard() {
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <span className="material-symbols-outlined" style={{ fontSize: 30 }}>
-            {isSearching ? 'search_off' : 'event_busy'}
+            {isSearching ? 'search_off' : finishedCount > 0 ? 'check_circle' : 'event_busy'}
           </span>
-          <strong>{isSearching ? `Sin resultados para "${search}"` : 'Sin partidos programados'}</strong>
+          <strong>
+            {isSearching
+              ? `Sin resultados para "${search}"`
+              : finishedCount > 0
+              ? 'Todos los partidos de hoy terminaron'
+              : 'Sin partidos programados'}
+          </strong>
           <p>
             {isSearching
               ? 'Intenta con el nombre completo del equipo o su abreviatura.'
+              : finishedCount > 0
+              ? `${finishedCount} partido${finishedCount !== 1 ? 's' : ''} finalizado${finishedCount !== 1 ? 's' : ''} hoy. Cambia la fecha para ver los de mañana.`
               : 'Prueba otra fecha o cambia de liga para seguir explorando.'}
           </p>
         </div>
@@ -267,8 +277,8 @@ export default function Dashboard() {
         <>
           <div className="section-head">
             <div>
-              <h2>{isSearching ? `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}` : 'Juegos de hoy'}</h2>
-              {!isSearching && <p>Ordenados para escanear rápido: equipos, forma, mercado y contexto.</p>}
+              <h2>{isSearching ? `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}` : 'En juego o por comenzar'}</h2>
+              {!isSearching && <p>Solo partidos activos. Los finalizados se ocultan automáticamente.</p>}
             </div>
             {!isSearching && (
               <span className="data-freshness">
@@ -279,6 +289,14 @@ export default function Dashboard() {
           <div className="match-list">
             {filtered.map(m => <MatchCard key={m.id} match={m} />)}
           </div>
+          {!isSearching && finishedCount > 0 && (
+            <p style={{
+              marginTop: 16, textAlign: 'center',
+              fontSize: 11.5, color: 'var(--faint)', fontWeight: 600,
+            }}>
+              {finishedCount} partido{finishedCount !== 1 ? 's' : ''} finalizado{finishedCount !== 1 ? 's' : ''} hoy · oculto{finishedCount !== 1 ? 's' : ''}
+            </p>
+          )}
         </>
       )}
     </div>
