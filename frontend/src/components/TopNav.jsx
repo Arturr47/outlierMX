@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 const LEAGUES = [
   { slug: 'mlb', name: 'MLB' },
   { slug: 'nba', name: 'NBA' },
@@ -8,9 +6,7 @@ const LEAGUES = [
   { slug: 'liga-mx', name: 'Fútbol' },
 ];
 
-export default function TopNav({ activeLeague, onLeague }) {
-  const [search, setSearch] = useState('');
-
+export default function TopNav({ activeLeague, onLeague, search, onSearch }) {
   return (
     <header className="top-nav">
       <nav className="league-tabs hide-scroll" aria-label="Ligas">
@@ -31,31 +27,32 @@ export default function TopNav({ activeLeague, onLeague }) {
 
       <div className="top-actions">
         <label className="search-box">
-          <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'rgba(218,231,219,0.35)' }}>search</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 15, color: 'var(--subtle)', flexShrink: 0 }}>search</span>
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar partido"
+            onChange={e => onSearch(e.target.value)}
+            placeholder="Buscar partido…"
             aria-label="Buscar partido"
           />
+          {search && (
+            <button
+              type="button"
+              onClick={() => onSearch('')}
+              style={{ background: 'none', border: 0, cursor: 'pointer', color: 'var(--subtle)', padding: 0, lineHeight: 1, flexShrink: 0 }}
+              aria-label="Limpiar búsqueda"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+            </button>
+          )}
         </label>
 
         <button className="icon-button" type="button" title="Notificaciones" aria-label="Notificaciones">
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>notifications</span>
           <span style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: '#6bfb9a',
-            border: '1px solid #080a09',
+            position: 'absolute', top: 8, right: 8,
+            width: 6, height: 6, borderRadius: '50%',
+            background: 'var(--brand)', border: '1px solid #080C0A',
           }} />
-        </button>
-
-        <button className="icon-button" type="button" title="Wallet" aria-label="Wallet">
-          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>account_balance_wallet</span>
         </button>
 
         <button className="avatar-button" type="button" title="Perfil" aria-label="Perfil">

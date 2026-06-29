@@ -1,15 +1,12 @@
 import { useCallback, useState, useEffect, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import MatchCard from '../components/MatchCard';
+import SkeletonCard from '../components/SkeletonCard';
+import { useWatchlist } from '../context/WatchlistContext';
 import api from '../lib/api';
 
 const LEAGUE_LABEL = {
-  mlb: 'MLB',
-  nba: 'NBA',
-  nfl: 'NFL',
-  nhl: 'NHL',
-  'liga-mx': 'Fútbol',
+  mlb: 'MLB', nba: 'NBA', nfl: 'NFL', nhl: 'NHL', 'liga-mx': 'Fútbol',
 };
 
 function buildDates() {
@@ -22,14 +19,6 @@ function buildDates() {
       weekday: d.toLocaleDateString('es-MX', { weekday: 'short' }),
     };
   });
-}
-
-function getLastUpdated(matches) {
-  const times = matches
-    .flatMap(m => m.odds || [])
-    .map(o => new Date(o.updated_at).getTime())
-    .filter(Boolean);
-  return times.length ? new Date(Math.max(...times)) : null;
 }
 
 function formatUpdated(date) {
@@ -46,23 +35,19 @@ function winPct(match, side) {
 }
 
 function getPublicSignal(match) {
-  const moneyline = match.public_betting?.find(p => p.bet_type === 'moneyline');
-  if (!moneyline) return null;
-  const home = Number(moneyline.home_pct_bets || 0);
-  const away = Number(moneyline.away_pct_bets || 0);
-  return {
-    side: home >= away ? match.home_short : match.away_short,
-    pct: Math.max(home, away),
-  };
+  const pb = match.public_betting?.find(p => p.bet_type === 'moneyline');
+  if (!pb) return null;
+  const home = Number(pb.home_pct_bets || 0);
+  const away = Number(pb.away_pct_bets || 0);
+  return { side: home >= away ? match.home_short : match.away_short, pct: Math.max(home, away) };
 }
 
 function buildInsights(matches) {
   if (!matches.length) return null;
-
   const liveCount = matches.filter(m => m.status === 'live').length;
-  const keyGame = matches
-    .slice()
-    .sort((a, b) => Math.abs(winPct(b, 'home') - winPct(b, 'away')) - Math.abs(winPct(a, 'home') - winPct(a, 'away')))[0];
+  const keyGame = matches.slice().sort(
+    (a, b) => Math.abs(winPct(b, 'home') - winPct(b, 'away')) - Math.abs(winPct(a, 'home') - winPct(a, 'away'))
+  )[0];
   const publicGame = matches
     .map(m => ({ match: m, signal: getPublicSignal(m) }))
     .filter(x => x.signal)
@@ -72,26 +57,37 @@ function buildInsights(matches) {
     (m.home_recent?.length || 0) >= 7 &&
     (m.away_recent?.length || 0) >= 7
   ).length;
+  return { liveCount, keyGame, publicGame, confidence: Math.round((strongData / matches.length) * 100) };
+}
 
-  return {
-    liveCount,
-    keyGame,
-    publicGame,
-    confidence: Math.round((strongData / matches.length) * 100),
-  };
+function filterMatches(matches, query) {
+  if (!query.trim()) return matches;
+  const q = query.toLowerCase();
+  return matches.filter(m =>
+    m.home_team?.toLowerCase().includes(q) ||
+    m.away_team?.toLowerCase().includes(q) ||
+    m.home_short?.toLowerCase().includes(q) ||
+    m.away_short?.toLowerCase().includes(q) ||
+    m.league?.toLowerCase().includes(q)
+  );
 }
 
 export default function Dashboard() {
-  const ctx = useOutletContext() || {};
-  const activeLeague = ctx.activeLeague || 'mlb';
+  const { activeLeague, search } = useOutletContext() || {};
+  const navigate = useNavigate();
+  const { list: watchlist } = useWatchlist();
 
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState('');
 
   const dates = useMemo(buildDates, []);
-  const lastUpdated = useMemo(() => getLastUpdated(matches), [matches]);
+  const lastUpdated = useMemo(() => {
+    const times = matches.flatMap(m => m.odds || []).map(o => new Date(o.updated_at).getTime()).filter(Boolean);
+    return times.length ? new Date(Math.max(...times)) : null;
+  }, [matches]);
   const insights = useMemo(() => buildInsights(matches), [matches]);
+  const filtered = useMemo(() => filterMatches(matches, search || ''), [matches, search]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -109,117 +105,173 @@ export default function Dashboard() {
 
   useEffect(() => { load(); }, [load]);
 
+  const isSearching = (search || '').trim().length > 0;
+
   return (
-    <div className="page-shell">
+    <div className="page-shell page-in">
+      {/* Hero */}
       <section className="page-hero">
         <div>
           <p className="eyebrow">Centro de análisis</p>
-          <h1 className="page-title">Partidos</h1>
+          <h1 className="page-title">
+            {isSearching ? `Resultados para "${search}"` : 'Partidos de hoy'}
+          </h1>
           <p className="page-copy">
-            Empieza por los juegos con mejor contexto: forma reciente, movimiento público y datos suficientes para comparar con confianza.
+            Juegos con mejor contexto: forma reciente, movimiento público y datos suficientes para decidir con confianza.
           </p>
         </div>
-
-        <div className="metric-strip" aria-label="Resumen">
+        <div className="metric-strip">
           <div className="mini-metric">
             <span>Liga</span>
             <strong>{LEAGUE_LABEL[activeLeague] || activeLeague.toUpperCase()}</strong>
           </div>
           <div className="mini-metric">
             <span>Partidos</span>
-            <strong>{loading ? '...' : matches.length}</strong>
+            <strong>{loading ? '…' : filtered.length}</strong>
           </div>
           <div className="mini-metric">
             <span>Actualizado</span>
-            <strong>{loading ? '...' : formatUpdated(lastUpdated)}</strong>
+            <strong>{loading ? '…' : formatUpdated(lastUpdated)}</strong>
           </div>
         </div>
       </section>
 
-      {!loading && insights && (
-        <section className="decision-panel" aria-label="Top insights de hoy">
+      {/* Insight panel */}
+      {!loading && !isSearching && insights && (
+        <section className="decision-panel" aria-label="Insights del día">
           <div className="decision-card primary">
             <p className="decision-label">Top insight hoy</p>
             <h2 className="decision-title">
-              {insights.keyGame.home_short} vs {insights.keyGame.away_short} tiene la comparación más marcada.
+              {insights.keyGame.home_short} vs {insights.keyGame.away_short} tiene la diferencia más marcada.
             </h2>
             <p className="decision-copy">
-              Revisa primero forma reciente y moneyline. Una diferencia grande de récord no es una predicción, pero sí una buena señal para investigar.
+              Revisa primero forma reciente y moneyline. Una diferencia grande de récord es una señal, no una predicción.
             </p>
             <div className="trust-row">
-              <span className="trust-pill good">{insights.confidence}% confianza de datos</span>
-              <span className="trust-pill">Muestra reciente incluida</span>
+              <span className="trust-pill good">{insights.confidence}% confianza</span>
+              <span className="trust-pill">Forma reciente incluida</span>
             </div>
           </div>
-
           <div className="decision-card">
-            <p className="decision-label">Juegos en vivo</p>
-            <h2 className="decision-title">{insights.liveCount || 'Sin'} en progreso</h2>
-            <p className="decision-copy">
-              Si un juego está en vivo, valida score y mercado antes de guardar un pick.
-            </p>
+            <p className="decision-label">En vivo</p>
+            <h2 className="decision-title">{insights.liveCount || 'Sin'} juegos en progreso</h2>
+            <p className="decision-copy">Si hay juego en vivo, valida el score antes de guardar un pick.</p>
           </div>
-
           <div className="decision-card">
             <p className="decision-label">Señal pública</p>
             <h2 className="decision-title">
               {insights.publicGame
-                ? `${insights.publicGame.signal.pct}% mira a ${insights.publicGame.signal.side}`
+                ? `${insights.publicGame.signal.pct}% hacia ${insights.publicGame.signal.side}`
                 : 'Sin señal fuerte'}
             </h2>
-            <p className="decision-copy">
-              Úsalo como contexto, no como recomendación automática. Compara si el dinero acompaña al volumen.
-            </p>
+            <p className="decision-copy">Contexto, no recomendación. Compara si el dinero acompaña al volumen.</p>
           </div>
-
           <div className="decision-card">
             <p className="decision-label">Siguiente paso</p>
-            <h2 className="decision-title">Abre un detalle</h2>
-            <p className="decision-copy">
-              Entra al partido que te interesa y confirma pitchers, tendencias y apuestas públicas antes de decidir.
-            </p>
+            <h2 className="decision-title">Abre un partido</h2>
+            <p className="decision-copy">Entra al partido que te interesa y confirma pitchers, tendencias y público.</p>
           </div>
         </section>
       )}
 
-      <div className="date-rail hide-scroll" aria-label="Fechas">
-        {dates.map(d => {
-          const active = date === d.iso;
-          return (
+      {/* Watchlist preview */}
+      {!isSearching && watchlist.length > 0 && (
+        <section style={{ marginBottom: 24 }}>
+          <div className="section-head">
+            <div>
+              <h2>En tu lista</h2>
+              <p>Partidos que guardaste para revisar.</p>
+            </div>
+            <button
+              onClick={() => navigate('/dashboard/picks')}
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: 12, fontWeight: 700, color: 'var(--brand)',
+                display: 'flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              Ver todos
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_right</span>
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }} className="hide-scroll">
+            {watchlist.slice(0, 5).map(item => (
+              <button
+                key={item.id}
+                onClick={() => navigate(`/dashboard/match/${item.id}`)}
+                style={{
+                  flexShrink: 0,
+                  minWidth: 160,
+                  padding: '10px 14px',
+                  border: '1px solid var(--brand-border)',
+                  borderRadius: 10,
+                  background: 'var(--brand-soft)',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 130ms',
+                }}
+              >
+                <p style={{ margin: 0, fontSize: 11, color: 'var(--brand)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Guardado
+                </p>
+                <p style={{ margin: '4px 0 0', fontSize: 12.5, fontWeight: 700, color: 'var(--text)' }}>
+                  {item.home_short} vs {item.away_short}
+                </p>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Date rail */}
+      {!isSearching && (
+        <div className="date-rail hide-scroll">
+          {dates.map(d => (
             <button
               key={d.iso}
               type="button"
               onClick={() => setDate(d.iso)}
-              className={`date-tab${active ? ' is-active' : ''}`}
+              className={`date-tab${date === d.iso ? ' is-active' : ''}`}
             >
               <strong>{d.label}</strong>
               <span>{d.weekday}</span>
             </button>
-          );
-        })}
-      </div>
-
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '80px' }}>
-          <Loader2 size={18} style={{ color: 'rgba(255,255,255,0.2)', animation: 'spin 1s linear infinite' }} />
+          ))}
         </div>
-      ) : matches.length === 0 ? (
+      )}
+
+      {/* Content */}
+      {loading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {[1, 2, 3].map(i => <SkeletonCard key={i} />)}
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <span className="material-symbols-outlined" style={{ fontSize: 28 }}>event_busy</span>
-          <strong>Sin partidos programados</strong>
-          <p>Prueba otra fecha o cambia de liga para seguir explorando oportunidades.</p>
+          <span className="material-symbols-outlined" style={{ fontSize: 30 }}>
+            {isSearching ? 'search_off' : 'event_busy'}
+          </span>
+          <strong>{isSearching ? `Sin resultados para "${search}"` : 'Sin partidos programados'}</strong>
+          <p>
+            {isSearching
+              ? 'Intenta con el nombre completo del equipo o su abreviatura.'
+              : 'Prueba otra fecha o cambia de liga para seguir explorando.'}
+          </p>
         </div>
       ) : (
         <>
           <div className="section-head">
             <div>
-              <h2>Juegos de hoy</h2>
-              <p>Ordenados para escanear rápido: equipos, forma, mercado y contexto accionable.</p>
+              <h2>{isSearching ? `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}` : 'Juegos de hoy'}</h2>
+              {!isSearching && <p>Ordenados para escanear rápido: equipos, forma, mercado y contexto.</p>}
             </div>
-            <span className="data-freshness">Datos: {formatUpdated(lastUpdated)}</span>
+            {!isSearching && (
+              <span className="data-freshness">
+                Datos: {formatUpdated(lastUpdated)}
+              </span>
+            )}
           </div>
           <div className="match-list">
-            {matches.map(m => <MatchCard key={m.id} match={m} />)}
+            {filtered.map(m => <MatchCard key={m.id} match={m} />)}
           </div>
         </>
       )}
