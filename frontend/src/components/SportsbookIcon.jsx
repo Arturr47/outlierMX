@@ -27,19 +27,18 @@ export function BetcrisIcon({ className = 'w-4 h-4' }) {
   );
 }
 
-export function getSportsbookIcon(name) {
+function SportsbookIcon({ name }) {
   const n = name?.toLowerCase() || '';
-  if (n.includes('caliente')) return CalienteIcon;
-  if (n.includes('365') || n.includes('bet365')) return Bet365Icon;
-  if (n.includes('betcris')) return BetcrisIcon;
+  if (n.includes('caliente')) return <CalienteIcon className="w-4 h-4" />;
+  if (n.includes('365') || n.includes('bet365')) return <Bet365Icon className="w-4 h-4" />;
+  if (n.includes('betcris')) return <BetcrisIcon className="w-4 h-4" />;
   return null;
 }
 
 export function SportsbookBadge({ name }) {
-  const Icon = getSportsbookIcon(name);
   return (
     <div className="flex items-center gap-1.5">
-      {Icon && <Icon className="w-4 h-4" />}
+      <SportsbookIcon name={name} />
       <span className="text-[11px] text-[#8b949e] font-medium">{name}</span>
     </div>
   );

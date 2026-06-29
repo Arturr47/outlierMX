@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bookmark, Trash2, Loader2, Calendar, ExternalLink } from 'lucide-react';
+import { Bookmark, Trash2, Loader2 } from 'lucide-react';
 import api from '../lib/api';
 
 export default function MyPicks() {
@@ -32,39 +32,55 @@ export default function MyPicks() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center">
+      <div className="app-loader">
         <Loader2 className="w-8 h-8 text-emerald-400 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6 lg:p-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-          <Bookmark className="w-8 h-8 text-emerald-400" /> Mis Picks
-        </h1>
-        <p className="text-slate-400">
-          Tus picks guardados ({picks.length} picks)
-        </p>
-      </div>
+    <div className="picks-shell">
+      <section className="page-hero">
+        <div>
+          <p className="eyebrow">Seguimiento</p>
+          <h1 className="page-title">Mis Picks</h1>
+          <p className="page-copy">
+            Guarda selecciones, revisa momios y mantén tu shortlist listo para decidir con calma.
+          </p>
+        </div>
+
+        <div className="metric-strip" aria-label="Resumen de picks">
+          <div className="mini-metric">
+            <span>Guardados</span>
+            <strong>{picks.length}</strong>
+          </div>
+          <div className="mini-metric">
+            <span>Estado</span>
+            <strong>{picks.length ? 'Activo' : 'Vacío'}</strong>
+          </div>
+          <div className="mini-metric">
+            <span>Modo</span>
+            <strong>Lista</strong>
+          </div>
+        </div>
+      </section>
 
       {picks.length === 0 ? (
-        <div className="text-center py-20">
-          <Bookmark className="w-12 h-12 text-slate-600 mx-auto mb-4" />
-          <p className="text-slate-400 text-lg mb-2">No tienes picks guardados</p>
-          <p className="text-slate-500 text-sm">
+        <div className="empty-state">
+          <Bookmark className="w-8 h-8 text-emerald-400 mb-3" />
+          <strong>No tienes picks guardados</strong>
+          <p>
             Entra a un partido y guarda picks desde los momios o props
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="picks-list">
           {picks.map((pick) => {
             const matchDate = new Date(pick.match_date);
             return (
               <div
                 key={pick.id}
-                className="bg-[#111827] border border-[#1e293b] rounded-xl p-5 flex items-center justify-between hover:border-[#334155] transition"
+                className="pick-card"
               >
                 <div className="flex items-center gap-4">
                   <div className="text-center min-w-[60px]">
@@ -99,7 +115,9 @@ export default function MyPicks() {
 
                 <button
                   onClick={() => deletePick(pick.id)}
-                  className="text-slate-500 hover:text-red-400 transition p-2"
+                  className="icon-button"
+                  title="Eliminar pick"
+                  aria-label="Eliminar pick"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

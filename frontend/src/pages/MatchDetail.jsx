@@ -27,6 +27,57 @@ function TeamBadge({ short, size = 28, radius = 8 }) {
   );
 }
 
+function marketUpdatedAt(odds) {
+  const times = (odds || [])
+    .map(o => new Date(o.updated_at).getTime())
+    .filter(Boolean);
+  if (!times.length) return 'Sin actualización';
+  const d = new Date(Math.max(...times));
+  return d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function publicRead(publicBetting, match) {
+  const ml = publicBetting?.find(p => p.bet_type === 'moneyline');
+  if (!ml) return { title: 'Sin señal pública', copy: 'Todavía no hay suficiente lectura de tickets y dinero.' };
+  const home = Number(ml.home_pct_bets || 0);
+  const away = Number(ml.away_pct_bets || 0);
+  const side = home >= away ? match.home_short : match.away_short;
+  const tickets = Math.max(home, away);
+  const money = home >= away ? Number(ml.home_pct_money || 0) : Number(ml.away_pct_money || 0);
+  return {
+    title: `${tickets}% mira a ${side}`,
+    copy: `Dinero en ${money}%. Úsalo como contexto, no como garantía.`,
+  };
+}
+
+function confidenceRead({ odds, homeRecent, awayRecent, publicBetting }) {
+  const recentRows = Math.min(homeRecent?.length || 0, awayRecent?.length || 0);
+  const oddsRows = odds?.length || 0;
+  const hasPublic = publicBetting?.length > 0;
+  if (recentRows >= 7 && oddsRows >= 4 && hasPublic) {
+    return { label: 'Alta', copy: 'Momios, público y muestra reciente disponibles.' };
+  }
+  if (recentRows >= 5 && oddsRows >= 2) {
+    return { label: 'Media', copy: 'Hay base para comparar, pero confirma mercado.' };
+  }
+  return { label: 'Baja', copy: 'Datos limitados; evita decidir solo con esta pantalla.' };
+}
+
+function formRead(match, homeWinPct, awayWinPct) {
+  if (homeWinPct === awayWinPct) {
+    return {
+      title: 'Forma pareja',
+      copy: `${match.home_short} y ${match.away_short} llegan con una muestra reciente similar.`,
+    };
+  }
+  const leader = homeWinPct > awayWinPct ? match.home_short : match.away_short;
+  const diff = Math.abs(homeWinPct - awayWinPct);
+  return {
+    title: `${leader} llega mejor`,
+    copy: `${diff} pts de diferencia en forma reciente. Vale la pena comparar calendario y pitcher.`,
+  };
+}
+
 /* ── Main ────────────────────────────────────────────── */
 export default function MatchDetail() {
   const { id } = useParams();
@@ -37,7 +88,7 @@ export default function MatchDetail() {
   const [rightTab, setRightTab] = useState('matchup');
   const [gamesFilter, setGamesFilter] = useState('all');
   const [selectedPick, setSelectedPick] = useState(null);   // { label, odds }
-  const [pickSaved, setPickSaved]       = useState(null);
+  const [, setPickSaved]       = useState(null);
 
   useEffect(() => {
     api.get(`/matches/${id}`)
@@ -65,14 +116,11 @@ export default function MatchDetail() {
     </div>
   );
 
-  const { match, odds, h2h, injuries, props: playerProps, public_betting, home_recent, away_recent, home_lineup, away_lineup, probable_pitchers, team_batters, batter_vs_pitcher } = data;
-  const isSoccer = match.sport === 'soccer';
+  const { match, odds, h2h, injuries, props: playerProps, public_betting, home_recent, away_recent, probable_pitchers, team_batters, batter_vs_pitcher } = data;
   const hasPitchers = Array.isArray(probable_pitchers) && probable_pitchers.length > 0;
   const matchDate = new Date(match.match_date);
 
   const moneyline   = odds.filter(o => o.bet_type === 'moneyline');
-  const spreadsOdds = odds.filter(o => o.bet_type === 'spread');
-  const totalsOdds  = odds.filter(o => o.bet_type === 'over_under');
   const bestHomeMl  = moneyline[0] || null;
   const bestAwayMl  = moneyline[0] || null;
 
@@ -91,21 +139,113 @@ export default function MatchDetail() {
     return `${isToday ? 'Today' : matchDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${time}`;
   })();
 
+  const publicInsight = publicRead(public_betting, match);
+  const confidence = confidenceRead({ odds, homeRecent: home_recent, awayRecent: away_recent, publicBetting: public_betting });
+  const formInsight = formRead(match, homeWinPct, awayWinPct);
+  const favoriteSide = bestHomeMl && bestAwayMl
+    ? (Number(bestHomeMl.home_odds) <= Number(bestAwayMl.away_odds) ? match.home_short : match.away_short)
+    : null;
+
   return (
-    <div style={{ paddingTop: '56px', minHeight: '100vh', background: '#0d0d0d' }}>
+    <div className="match-detail-page">
 
       {/* ── Header ────────────────────────────────────── */}
-      <div style={{ background: 'rgba(14,14,16,0.95)', borderBottom: '1px solid rgba(61,74,62,0.4)', padding: '18px 28px 0' }}>
+      <div className="match-detail-header">
 
         {/* Back */}
-        <button onClick={() => navigate(-1)} style={{ display:'flex', alignItems:'center', gap:'6px', background:'none', border:'none', cursor:'pointer', fontSize:'12px', color:'rgba(188,202,187,0.45)', padding:0, marginBottom:'16px' }}
-          onMouseEnter={e=>e.currentTarget.style.color='#bccabb'} onMouseLeave={e=>e.currentTarget.style.color='rgba(188,202,187,0.45)'}>
+        <button onClick={() => navigate(-1)} className="back-link">
           <span className="material-symbols-outlined" style={{ fontSize:'15px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>arrow_back</span>
           Volver a Partidos
         </button>
 
+        <div className="match-hero-row">
+          <div className="match-title-wrap">
+            <div className="match-badge-stack">
+              <TeamBadge short={match.home_short} size={48} radius="full" />
+              <TeamBadge short={match.away_short} size={48} radius="full" />
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div className="match-kicker">
+                <span>{match.home_short} @ {match.away_short}</span>
+                <span>{dateLabel}</span>
+                {match.venue && <span>{match.venue}</span>}
+              </div>
+              <h1 className="match-title">{match.home_team} vs {match.away_team}</h1>
+              <p className="match-subtitle">
+                Vista de decisión: entiende forma reciente, mercado y datos de confianza antes de guardar un pick.
+              </p>
+            </div>
+          </div>
+
+          <div className="quick-market" aria-label="Mercado rápido">
+            {bestHomeMl && (
+              <button
+                type="button"
+                className={`quick-market-card${selectedPick?.label === match.home_short ? ' selected' : ''}`}
+                onClick={() => setSelectedPick(p => p?.label === match.home_short ? null : { label: match.home_short, odds: parseFloat(bestHomeMl.home_odds).toFixed(2) })}
+              >
+                <span>{match.home_short} moneyline</span>
+                <strong>{parseFloat(bestHomeMl.home_odds).toFixed(2)}</strong>
+              </button>
+            )}
+            {bestAwayMl && (
+              <button
+                type="button"
+                className={`quick-market-card${selectedPick?.label === match.away_short ? ' selected' : ''}`}
+                onClick={() => setSelectedPick(p => p?.label === match.away_short ? null : { label: match.away_short, odds: parseFloat(bestAwayMl.away_odds).toFixed(2) })}
+              >
+                <span>{match.away_short} moneyline</span>
+                <strong>{parseFloat(bestAwayMl.away_odds).toFixed(2)}</strong>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {selectedPick && (
+          <div className="saved-pick-bar" style={{ marginBottom: 14 }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 15 }}>bookmark_add</span>
+            <span>{selectedPick.label} ML · {selectedPick.odds}</span>
+            <button
+              type="button"
+              onClick={() => {
+                savePick('moneyline', `${selectedPick.label} ML`, selectedPick.odds, bestHomeMl?.sportsbook);
+                setSelectedPick(null);
+              }}
+              style={{ marginLeft: 8, background: 'var(--brand)', color: '#0d140f', border: 0, borderRadius: 6, padding: '5px 9px', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
+            >
+              Guardar pick
+            </button>
+            <button type="button" onClick={() => setSelectedPick(null)} style={{ background: 'transparent', border: 0, color: 'var(--subtle)', cursor: 'pointer', padding: 0 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 15 }}>close</span>
+            </button>
+          </div>
+        )}
+
+        <div className="match-insight-row">
+          <div className="match-insight-card primary">
+            <p className="match-insight-label">Lectura principal</p>
+            <p className="match-insight-value">{formInsight.title}</p>
+            <p className="match-insight-copy">{formInsight.copy}</p>
+          </div>
+          <div className="match-insight-card">
+            <p className="match-insight-label">Mercado</p>
+            <p className="match-insight-value">{favoriteSide ? `${favoriteSide} favorito` : 'Sin favorito claro'}</p>
+            <p className="match-insight-copy">Compara este precio contra forma, pitcher y apuestas públicas.</p>
+          </div>
+          <div className="match-insight-card">
+            <p className="match-insight-label">Público</p>
+            <p className="match-insight-value">{publicInsight.title}</p>
+            <p className="match-insight-copy">{publicInsight.copy}</p>
+          </div>
+          <div className="match-insight-card">
+            <p className="match-insight-label">Confianza</p>
+            <p className="match-insight-value">{confidence.label}</p>
+            <p className="match-insight-copy">{confidence.copy} Última actualización {marketUpdatedAt(odds)}.</p>
+          </div>
+        </div>
+
         {/* Match row */}
-        <div style={{ display:'flex', alignItems:'center', gap:'14px', marginBottom:'14px' }}>
+        <div style={{ display:'none' }}>
           {/* Overlapping team badges */}
           <div style={{ display:'flex', position:'relative', width:'68px', height:'44px', flexShrink:0 }}>
             <TeamBadge short={match.home_short} size={44} radius="full" />
@@ -131,7 +271,7 @@ export default function MatchDetail() {
         </div>
 
         {/* Quick odds + betslip row */}
-        <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'14px', flexWrap:'wrap' }}>
+        <div style={{ display:'none' }}>
           {/* Odds pills */}
           {bestHomeMl && (
             <button onClick={() => setSelectedPick(p => p?.label === match.home_short ? null : { label: match.home_short, odds: parseFloat(bestHomeMl.home_odds).toFixed(2) })}
@@ -182,42 +322,34 @@ export default function MatchDetail() {
         </div>
 
         {/* Stats tabs */}
-        <div style={{ display:'flex', alignItems:'center', gap:'2px', borderTop:'1px solid rgba(255,255,255,0.05)', paddingTop:'10px' }}>
-          <button style={{ padding:'4px 8px', background:'none', border:'none', cursor:'pointer', color:'rgba(188,202,187,0.3)', display:'flex', alignItems:'center' }}>
+        <div className="detail-tabs hide-scroll">
+          <button className="detail-tab" type="button" title="Contexto local/visitante">
             <span className="material-symbols-outlined" style={{ fontSize:'15px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>location_on</span>
           </button>
           {statsTabs.map(tab => {
             const active = statsTab === tab;
             return (
-              <button key={tab} onClick={() => setStatsTab(tab)} style={{
-                padding:'5px 13px', borderRadius:'7px', border:'none', cursor:'pointer',
-                fontSize:'12.5px', fontWeight: active ? 700 : 500,
-                background: active ? '#f0f0f0' : 'transparent',
-                color: active ? '#0d0d0d' : 'rgba(188,202,187,0.5)',
-                transition:'all 120ms',
-              }}
-                onMouseEnter={e=>{ if(!active) e.currentTarget.style.color='#bccabb'; }}
-                onMouseLeave={e=>{ if(!active) e.currentTarget.style.color='rgba(188,202,187,0.5)'; }}>
+              <button key={tab} type="button" onClick={() => setStatsTab(tab)} className={`detail-tab${active ? ' active' : ''}`}>
                 {tab}
               </button>
             );
           })}
-          <button style={{ marginLeft:'auto', padding:'4px 10px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:'7px', cursor:'pointer', display:'flex', alignItems:'center', gap:'5px', color:'rgba(188,202,187,0.4)', fontSize:'11px', fontWeight:500 }}>
+          <button className="detail-tab" type="button" style={{ marginLeft:'auto' }} title="Filtros">
             <span className="material-symbols-outlined" style={{ fontSize:'14px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>tune</span>
           </button>
         </div>
       </div>
 
       {/* ── Two columns ───────────────────────────────── */}
-      <div style={{ display:'flex' }}>
+      <div className="match-detail-grid">
 
         {/* Left */}
-        <div style={{ flex:1, padding:'24px 28px 40px', borderRight:'1px solid rgba(255,255,255,0.05)', minWidth:0 }}>
+        <div className="match-detail-main">
 
           {/* Stats header */}
           <div style={{ display:'flex', alignItems:'center', gap:'8px', marginBottom:'16px' }}>
-            <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'#6bfb9a', fontVariationSettings:"'FILL' 0,'wght' 300" }}>percent</span>
-            <h2 style={{ fontSize:'15px', fontWeight:700, color:'#f0f0f0', margin:0 }}>Estadísticas</h2>
+            <span className="material-symbols-outlined" style={{ fontSize:'18px', color:'var(--brand)', fontVariationSettings:"'FILL' 0,'wght' 300" }}>percent</span>
+            <h2 style={{ fontSize:'15px', fontWeight:800, color:'var(--text)', margin:0 }}>Estadísticas</h2>
           </div>
 
           {/* Win/Loss card */}
@@ -334,7 +466,7 @@ export default function MatchDetail() {
         </div>
 
         {/* ── Right panel ──────────────────────────────── */}
-        <div style={{ width:'360px', flexShrink:0, padding:'24px 20px' }}>
+        <div className="match-detail-side">
 
           {/* Odds Timeline */}
           <div style={{ marginBottom:'24px' }}>
@@ -406,7 +538,7 @@ export default function MatchDetail() {
           </div>
 
           {rightTab === 'matchup' && (
-            <MatchupTab match={match} isSoccer={isSoccer} pitchers={probable_pitchers} batters={team_batters||[]} hasPitchers={hasPitchers} batterVsPitcher={batter_vs_pitcher||[]} />
+            <MatchupTab match={match} pitchers={probable_pitchers} batters={team_batters||[]} hasPitchers={hasPitchers} batterVsPitcher={batter_vs_pitcher||[]} />
           )}
           {rightTab === 'injuries' && (
             <InjuriesTab injuries={injuries} />
@@ -495,7 +627,7 @@ function RecentGamesSection({ homeGames, awayGames, match, numGames, gamesFilter
         {[
           { games: home, short: match.home_short },
           { games: away, short: match.away_short },
-        ].map(({ games, short }, col) => (
+        ].map(({ games }, col) => (
           <div key={col} style={{ borderLeft: col>0?'1px solid rgba(255,255,255,0.04)':'none' }}>
             {games.map((game, i) => {
               const dateStr = new Date(game.game_date).toLocaleDateString('en-US',{month:'numeric',day:'numeric'});
@@ -566,7 +698,7 @@ function H2HSection({ h2h, match }) {
 }
 
 /* ── MatchupTab (Starting Pitcher + Team Rankings) ───── */
-function MatchupTab({ match, isSoccer, pitchers, batters, hasPitchers, batterVsPitcher }) {
+function MatchupTab({ match, pitchers, batters, hasPitchers, batterVsPitcher }) {
   const [selectedTeam, setSelectedTeam] = useState(match?.away_team_id);
   const homePitcher = pitchers?.find(p => p.team_id === match.home_team_id);
   const awayPitcher = pitchers?.find(p => p.team_id === match.away_team_id);
@@ -713,35 +845,71 @@ function MatchupTab({ match, isSoccer, pitchers, batters, hasPitchers, batterVsP
 }
 
 /* ── BatterBlock ─────────────────────────────────────── */
-const BATTER_COLS = '1fr 34px 40px 26px 28px 40px 32px';
 
-function BatterRow({ name, ab, avg, hr, rbi, ops, kpct }) {
+// Colores por umbrales absolutos MLB
+function avgColor(v) {
+  const n = parseFloat(v);
+  if (isNaN(n) || n === 0) return 'rgba(188,202,187,0.35)';
+  if (n >= 0.275) return '#4ade80';
+  if (n <= 0.230) return '#f87171';
+  return '#e2e8f0';
+}
+function opsColor(v) {
+  const n = parseFloat(v);
+  if (isNaN(n) || n === 0) return 'rgba(188,202,187,0.35)';
+  if (n >= 0.800) return '#4ade80';
+  if (n <= 0.680) return '#f87171';
+  return '#e2e8f0';
+}
+
+// MLB headshot CDN (works for most active players)
+function mlbHeadshot(mlbId) {
+  if (!mlbId) return null;
+  return `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_60,q_auto:best/v1/people/${mlbId}/headshot/67/current`;
+}
+
+function BatterRow({ name, mlbId, ab, avg, hr, rbi, ops, kpct, avgClr, opsClr }) {
+  const cAvg = avgClr || '#e2e8f0';
+  const cOps = opsClr || '#e2e8f0';
+  const initials = (name || '').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const photo = mlbHeadshot(mlbId);
+
+  const tdBase = { padding:'0 6px', textAlign:'right', fontVariantNumeric:'tabular-nums', fontSize:'12px', whiteSpace:'nowrap' };
+
   return (
-    <div style={{ display:'grid', gridTemplateColumns:BATTER_COLS, gap:0, alignItems:'center', padding:'7px 0', borderTop:'1px solid rgba(255,255,255,0.04)', fontSize:'11.5px' }}>
-      <div style={{ display:'flex', alignItems:'center', gap:'6px', minWidth:0 }}>
-        <div style={{ width:'18px', height:'18px', borderRadius:'50%', background:'rgba(255,255,255,0.06)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <span style={{ fontSize:'7px', fontWeight:700, color:'rgba(188,202,187,0.4)' }}>{(name||'').split(' ').map(w=>w[0]).slice(0,2).join('')}</span>
+    <tr style={{ borderTop:'1px solid rgba(255,255,255,0.045)' }}>
+      {/* Player */}
+      <td style={{ padding:'7px 8px 7px 14px', minWidth:0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+          {/* Avatar */}
+          <div style={{ width:'28px', height:'28px', borderRadius:'50%', overflow:'hidden', background:'rgba(255,255,255,0.07)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', border:'1px solid rgba(255,255,255,0.08)' }}>
+            {photo
+              ? <img src={photo} alt={initials} style={{ width:'100%', height:'100%', objectFit:'cover' }} onError={e => { e.target.style.display='none'; }} />
+              : <span style={{ fontSize:'8px', fontWeight:700, color:'rgba(188,202,187,0.5)' }}>{initials}</span>
+            }
+          </div>
+          {/* Name + arrow */}
+          <span style={{ color:'#e2e8f0', fontSize:'12px', fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', lineHeight:1.2 }}>
+            {shortName(name)}
+          </span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink:0, opacity:0.4 }}>
+            <path d="M2 8L8 2M8 2H3.5M8 2V6.5" stroke="#6bfb9a" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
-        <span style={{ color:'#f0f0f0', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{shortName(name)}</span>
-        <span style={{ fontSize:'9px', color:'rgba(107,251,154,0.5)', flexShrink:0 }}>↗</span>
-      </div>
-      <div style={{ textAlign:'right', color:'rgba(188,202,187,0.4)', fontVariantNumeric:'tabular-nums' }}>{ab ?? '-'}</div>
-      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{fmtAvg(avg)}</div>
-      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{hr ?? '-'}</div>
-      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{rbi ?? '-'}</div>
-      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'#f0f0f0' }}>{fmtAvg(ops)}</div>
-      <div style={{ textAlign:'right', fontWeight:600, fontVariantNumeric:'tabular-nums', color:'rgba(188,202,187,0.5)' }}>{kpct != null ? `${parseFloat(kpct).toFixed(1)}%` : '-'}</div>
-    </div>
+      </td>
+      <td style={{ ...tdBase, color:'rgba(188,202,187,0.4)', paddingRight:'10px' }}>{ab ?? '-'}</td>
+      <td style={{ ...tdBase, fontWeight:700, color: cAvg }}>{fmtAvg(avg)}</td>
+      <td style={{ ...tdBase, color:'#e2e8f0' }}>{hr ?? '-'}</td>
+      <td style={{ ...tdBase, color:'#e2e8f0' }}>{rbi ?? '-'}</td>
+      <td style={{ ...tdBase, fontWeight:700, color: cOps }}>{fmtAvg(ops)}</td>
+      <td style={{ ...tdBase, color:'rgba(188,202,187,0.5)', paddingRight:'14px' }}>
+        {kpct != null ? `${parseFloat(kpct).toFixed(1)}%` : '-'}
+      </td>
+    </tr>
   );
 }
 
-function BatterColHeaders() {
-  return (
-    <div style={{ display:'grid', gridTemplateColumns:BATTER_COLS, gap:0, padding:'6px 14px 4px', fontSize:'9px', fontWeight:700, color:'rgba(188,202,187,0.3)', textTransform:'uppercase', letterSpacing:'0.06em' }}>
-      <div /><div style={{textAlign:'right'}}>AB</div><div style={{textAlign:'right'}}>AVG</div><div style={{textAlign:'right'}}>HR</div><div style={{textAlign:'right'}}>RBI</div><div style={{textAlign:'right'}}>OPS</div><div style={{textAlign:'right'}}>K%</div>
-    </div>
-  );
-}
+const TH_STYLE = { padding:'5px 6px', fontSize:'9.5px', fontWeight:700, color:'rgba(188,202,187,0.3)', textTransform:'uppercase', letterSpacing:'0.07em', textAlign:'right', whiteSpace:'nowrap' };
 
 function BatterBlock({ batters, pitcherThrows, pitcherName, vsPitcherRows, teamShort, season }) {
   const [tab, setTab] = useState('season');
@@ -756,8 +924,6 @@ function BatterBlock({ batters, pitcherThrows, pitcherName, vsPitcherRows, teamS
     : null;
 
   const sortedBatters = batters.slice().sort((a,b)=>(b.season_ab||0)-(a.season_ab||0)).slice(0,9);
-
-  // vs pitcher rows indexed by mlb_batter_id
   const vspMap = new Map((vsPitcherRows||[]).map(r => [r.mlb_batter_id, r]));
 
   const tabs = [
@@ -766,59 +932,96 @@ function BatterBlock({ batters, pitcherThrows, pitcherName, vsPitcherRows, teamS
     ...(pitcherTabLabel ? [{ id:'vspitcher', label: pitcherTabLabel }] : []),
   ];
 
+  let rows = null;
+  if (tab === 'season') {
+    rows = sortedBatters.map((b,i) => (
+      <BatterRow key={i} name={b.full_name} mlbId={b.mlb_player_id}
+        ab={b.season_ab} avg={b.season_avg} hr={b.season_hr} rbi={b.season_rbi} ops={b.season_ops} kpct={b.season_k_pct}
+        avgClr={avgColor(b.season_avg)} opsClr={opsColor(b.season_ops)} />
+    ));
+  } else if (tab === 'split') {
+    rows = sortedBatters.map((b,i) => {
+      const s = isRhp
+        ? { ab:b.vr_ab, avg:b.vr_avg, hr:b.vr_hr, rbi:b.vr_rbi, ops:b.vr_ops, kpct:b.vr_k_pct }
+        : { ab:b.vl_ab, avg:b.vl_avg, hr:b.vl_hr, rbi:b.vl_rbi, ops:b.vl_ops, kpct:b.vl_k_pct };
+      return <BatterRow key={i} name={b.full_name} mlbId={b.mlb_player_id} {...s}
+        avgClr={avgColor(s.avg)} opsClr={opsColor(s.ops)} />;
+    });
+  } else {
+    rows = sortedBatters.map((b,i) => {
+      const vsp = vspMap.get(b.mlb_player_id);
+      return <BatterRow key={i} name={b.full_name} mlbId={b.mlb_player_id}
+        ab={vsp?.ab ?? null} avg={vsp?.avg ?? null} hr={vsp?.hr ?? null}
+        rbi={vsp?.rbi ?? null} ops={vsp?.ops ?? null} kpct={vsp?.k_pct ?? null}
+        avgClr={avgColor(vsp?.avg)} opsClr={opsColor(vsp?.ops)} />;
+    });
+  }
+
   return (
     <div className="lit-card" style={{ overflow:'hidden', marginTop:'12px' }}>
-      {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'12px 14px 0' }}>
-        <span style={{ fontSize:'13px', fontWeight:700, color:'#f0f0f0' }}>Batter Stats</span>
-        <span style={{ fontSize:'9px', fontWeight:700, color:'#f0f0f0', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'99px', padding:'2px 8px' }}>{teamShort}</span>
+      {/* Header row */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 14px 0' }}>
+        <span style={{ fontSize:'12px', fontWeight:700, color:'#f0f0f0', letterSpacing:'0.01em' }}>Batter Stats</span>
+        <span style={{ fontSize:'9px', fontWeight:700, color:'rgba(188,202,187,0.6)', background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:'99px', padding:'2px 8px', letterSpacing:'0.05em' }}>{teamShort}</span>
       </div>
 
       {/* Tabs */}
-      <div style={{ display:'flex', borderBottom:'1px solid rgba(255,255,255,0.05)', padding:'0 14px', gap:0, overflowX:'auto' }}>
+      <div style={{ display:'flex', borderBottom:'1px solid rgba(255,255,255,0.07)', padding:'0 14px', gap:0, overflowX:'auto' }}>
         {tabs.map(t => {
           const active = tab === t.id;
           return (
             <button key={t.id} onClick={() => setTab(t.id)} style={{
-              padding:'8px 0', marginRight:'14px', fontSize:'11px', fontWeight: active ? 600 : 500,
+              padding:'8px 0', marginRight:'16px', fontSize:'10.5px', fontWeight: active ? 600 : 400,
               background:'none', border:'none', cursor:'pointer',
-              borderBottom: active ? '2px solid #f0f0f0' : '2px solid transparent',
-              color: active ? '#f0f0f0' : 'rgba(188,202,187,0.35)',
+              borderBottom: active ? '2px solid #e2e8f0' : '2px solid transparent',
+              color: active ? '#e2e8f0' : 'rgba(188,202,187,0.35)',
               marginBottom:'-1px', whiteSpace:'nowrap', flexShrink:0,
-              transition:'color 120ms',
+              transition:'color 100ms',
             }}>{t.label}</button>
           );
         })}
       </div>
 
-      <BatterColHeaders />
+      {/* Table */}
+      <table style={{ width:'100%', borderCollapse:'collapse', tableLayout:'fixed' }}>
+        <colgroup>
+          <col style={{ width:'auto' }} />
+          <col style={{ width:'32px' }} />
+          <col style={{ width:'42px' }} />
+          <col style={{ width:'28px' }} />
+          <col style={{ width:'30px' }} />
+          <col style={{ width:'44px' }} />
+          <col style={{ width:'36px' }} />
+        </colgroup>
+        <thead>
+          <tr>
+            <th style={{ ...TH_STYLE, textAlign:'left', paddingLeft:'14px' }}>Batter</th>
+            <th style={TH_STYLE}>AB</th>
+            <th style={{ ...TH_STYLE, color:'rgba(107,251,154,0.5)' }}>AVG</th>
+            <th style={TH_STYLE}>HR</th>
+            <th style={TH_STYLE}>RBI</th>
+            <th style={{ ...TH_STYLE, color:'rgba(107,251,154,0.5)' }}>OPS</th>
+            <th style={{ ...TH_STYLE, paddingRight:'14px' }}>K%</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows}
+          {!sortedBatters.length && (
+            <tr><td colSpan={7} style={{ padding:'16px', textAlign:'center', fontSize:'12px', color:'rgba(188,202,187,0.3)' }}>Sin datos de bateadores</td></tr>
+          )}
+        </tbody>
+      </table>
 
-      <div style={{ padding:'0 14px 10px' }}>
-        {tab === 'season' && sortedBatters.map((b,i) => (
-          <BatterRow key={i} name={b.full_name} ab={b.season_ab} avg={b.season_avg} hr={b.season_hr} rbi={b.season_rbi} ops={b.season_ops} kpct={b.season_k_pct} />
-        ))}
-
-        {tab === 'split' && sortedBatters.map((b,i) => {
-          const s = isRhp
-            ? { ab:b.vr_ab, avg:b.vr_avg, hr:b.vr_hr, rbi:b.vr_rbi, ops:b.vr_ops, kpct:b.vr_k_pct }
-            : { ab:b.vl_ab, avg:b.vl_avg, hr:b.vl_hr, rbi:b.vl_rbi, ops:b.vl_ops, kpct:b.vl_k_pct };
-          return <BatterRow key={i} name={b.full_name} {...s} />;
-        })}
-
-        {tab === 'vspitcher' && sortedBatters.map((b,i) => {
-          const vsp = vspMap.get(b.mlb_player_id);
-          return <BatterRow key={i} name={b.full_name}
-            ab={vsp?.ab ?? null} avg={vsp?.avg ?? null} hr={vsp?.hr ?? null}
-            rbi={vsp?.rbi ?? null} ops={vsp?.ops ?? null} kpct={vsp?.k_pct ?? null}
-          />;
-        })}
-
-        {!sortedBatters.length && <p style={{ fontSize:'12px', color:'#bccabb', textAlign:'center', padding:'12px 0' }}>Sin datos de bateadores</p>}
-      </div>
-
-      <div style={{ padding:'6px 14px 10px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', gap:'6px' }}>
-        <div style={{ width:'10px', height:'10px', borderRadius:'2px', background:'#6bfb9a' }} />
-        <span style={{ fontSize:'10px', color:'rgba(188,202,187,0.35)' }}>— comparado con stats de temporada</span>
+      {/* Legend */}
+      <div style={{ padding:'6px 14px 9px', borderTop:'1px solid rgba(255,255,255,0.04)', display:'flex', alignItems:'center', gap:'10px' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
+          <div style={{ width:'7px', height:'7px', borderRadius:'2px', background:'#4ade80' }} />
+          <span style={{ fontSize:'9.5px', color:'rgba(188,202,187,0.35)' }}>≥.275 AVG / ≥.800 OPS</span>
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:'4px' }}>
+          <div style={{ width:'7px', height:'7px', borderRadius:'2px', background:'#f87171' }} />
+          <span style={{ fontSize:'9.5px', color:'rgba(188,202,187,0.35)' }}>≤.230 AVG / ≤.680 OPS</span>
+        </div>
       </div>
     </div>
   );
@@ -831,10 +1034,7 @@ function InjuriesTab({ injuries }) {
   );
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:'12px' }}>
-      {['home','away'].map(side => {
-        const teamInjuries = injuries; // backend doesn't split by side, show all
-        return (
-          <div className="lit-card" style={{ overflow:'hidden' }} key={side}>
+      <div className="lit-card" style={{ overflow:'hidden' }}>
             {injuries.map((inj,i) => (
               <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'11px 14px', borderTop: i>0?'1px solid rgba(255,255,255,0.04)':'none' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
@@ -847,10 +1047,7 @@ function InjuriesTab({ injuries }) {
                 <StatusBadge status={inj.status} />
               </div>
             ))}
-          </div>
-        );
-        return null;
-      }).slice(0,1)}
+      </div>
     </div>
   );
 }

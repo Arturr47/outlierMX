@@ -13,7 +13,7 @@ function ProtectedLayout() {
   const [activeLeague, setActiveLeague] = useState('mlb');
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="app-loader">
       <span className="material-symbols-outlined" style={{ color: 'rgba(255,255,255,0.2)', fontSize: '24px', animation: 'spin 1s linear infinite' }}>progress_activity</span>
     </div>
   );
@@ -21,11 +21,11 @@ function ProtectedLayout() {
   if (!user) return <Navigate to="/login" />;
 
   return (
-    <div style={{ background: '#0d0d0d', minHeight: '100vh' }}>
+    <div className="app-shell">
       <Sidebar />
-      <div style={{ marginLeft: '220px' }}>
+      <div className="app-content">
         <TopNav activeLeague={activeLeague} onLeague={setActiveLeague} />
-        <main>
+        <main className="app-main">
           <Outlet context={{ activeLeague }} />
         </main>
       </div>

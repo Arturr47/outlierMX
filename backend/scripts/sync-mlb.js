@@ -121,6 +121,7 @@ async function run() {
     await client.query(`DELETE FROM lineups       WHERE ${dateFilter}`, [LEAGUE_ID, DATE]);
     await client.query(`DELETE FROM odds          WHERE ${dateFilter}`, [LEAGUE_ID, DATE]);
     await client.query(`DELETE FROM probable_pitchers WHERE ${dateFilter}`, [LEAGUE_ID, DATE]);
+    await client.query(`DELETE FROM batter_vs_pitcher WHERE ${dateFilter}`, [LEAGUE_ID, DATE]);
     await client.query(`DELETE FROM matches WHERE league_id=$1 AND DATE(match_date)=$2`, [LEAGUE_ID, DATE]);
 
     // 3. Upsert all teams referenced today, collect mlb->db id map + pct

@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
 import { Crown, Zap } from 'lucide-react';
 import api from '../lib/api';
 
