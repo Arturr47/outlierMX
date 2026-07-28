@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "sync:wc": "node scripts/sync-world-cup.js",
+    "sync:mlb": "node scripts/sync-mlb.js",
+    "sync": "node scripts/daily-sync.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

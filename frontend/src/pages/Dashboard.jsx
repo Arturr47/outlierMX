@@ -6,7 +6,7 @@ import { useWatchlist } from '../context/WatchlistContext';
 import api from '../lib/api';
 
 const LEAGUE_LABEL = {
-  mlb: 'MLB', nba: 'NBA', nfl: 'NFL', nhl: 'NHL', 'liga-mx': 'Fútbol',
+  mlb: 'MLB', nba: 'NBA', nfl: 'NFL', nhl: 'NHL', 'liga-mx': 'Liga MX', 'world-cup': 'Mundial',
 };
 
 function buildDates() {
@@ -115,12 +115,20 @@ export default function Dashboard() {
       {/* Hero */}
       <section className="page-hero">
         <div>
-          <p className="eyebrow">Centro de análisis</p>
+          <p className="eyebrow">
+            {activeLeague === 'world-cup' ? 'Fase de grupos · 2026' : 'Centro de análisis'}
+          </p>
           <h1 className="page-title">
-            {isSearching ? `Resultados para "${search}"` : 'Partidos de hoy'}
+            {isSearching
+              ? `Resultados para "${search}"`
+              : activeLeague === 'world-cup'
+              ? 'FIFA World Cup 2026'
+              : 'Partidos de hoy'}
           </h1>
           <p className="page-copy">
-            Juegos con mejor contexto: forma reciente, movimiento público y datos suficientes para decidir con confianza.
+            {activeLeague === 'world-cup'
+              ? 'Momios con draw, alineaciones probables, lesionados y apuestas públicas para cada duelo del Mundial.'
+              : 'Juegos con mejor contexto: forma reciente, movimiento público y datos suficientes para decidir con confianza.'}
           </p>
         </div>
         <div className="metric-strip">

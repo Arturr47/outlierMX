@@ -63,7 +63,7 @@ function confidenceRead({ odds, homeRecent, awayRecent, publicBetting }) {
   return { label: 'Baja', copy: 'Datos limitados; evita decidir solo con esta pantalla.' };
 }
 
-function formRead(match, homeWinPct, awayWinPct) {
+function formRead(match, homeWinPct, awayWinPct, isSoccer) {
   if (homeWinPct === awayWinPct) {
     return {
       title: 'Forma pareja',
@@ -74,7 +74,9 @@ function formRead(match, homeWinPct, awayWinPct) {
   const diff = Math.abs(homeWinPct - awayWinPct);
   return {
     title: `${leader} llega mejor`,
-    copy: `${diff} pts de diferencia en forma reciente. Vale la pena comparar calendario y pitcher.`,
+    copy: isSoccer
+      ? `${diff} pts de diferencia en forma reciente. Revisa alineación y lesionados antes de decidir.`
+      : `${diff} pts de diferencia en forma reciente. Vale la pena comparar calendario y pitcher.`,
   };
 }
 
@@ -85,7 +87,8 @@ export default function MatchDetail() {
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [statsTab, setStatsTab] = useState('L10');
-  const [rightTab, setRightTab] = useState('matchup');
+  const [rightTabOverride, setRightTab] = useState(null);
+  const rightTab = rightTabOverride ?? (data?.match?.sport === 'soccer' ? 'lineups' : 'matchup');
   const [gamesFilter, setGamesFilter] = useState('all');
   const [selectedPick, setSelectedPick] = useState(null);   // { label, odds }
   const [, setPickSaved]       = useState(null);
@@ -116,8 +119,9 @@ export default function MatchDetail() {
     </div>
   );
 
-  const { match, odds, h2h, injuries, props: playerProps, public_betting, home_recent, away_recent, probable_pitchers, team_batters, batter_vs_pitcher } = data;
+  const { match, odds, h2h, injuries, props: playerProps, public_betting, home_recent, away_recent, probable_pitchers, team_batters, batter_vs_pitcher, home_lineup, away_lineup } = data;
   const hasPitchers = Array.isArray(probable_pitchers) && probable_pitchers.length > 0;
+  const isSoccer = match?.sport === 'soccer';
   const matchDate = new Date(match.match_date);
 
   const moneyline   = odds.filter(o => o.bet_type === 'moneyline');
@@ -141,7 +145,7 @@ export default function MatchDetail() {
 
   const publicInsight = publicRead(public_betting, match);
   const confidence = confidenceRead({ odds, homeRecent: home_recent, awayRecent: away_recent, publicBetting: public_betting });
-  const formInsight = formRead(match, homeWinPct, awayWinPct);
+  const formInsight = formRead(match, homeWinPct, awayWinPct, isSoccer);
   const favoriteSide = bestHomeMl && bestAwayMl
     ? (Number(bestHomeMl.home_odds) <= Number(bestAwayMl.away_odds) ? match.home_short : match.away_short)
     : null;
@@ -184,8 +188,18 @@ export default function MatchDetail() {
                 className={`quick-market-card${selectedPick?.label === match.home_short ? ' selected' : ''}`}
                 onClick={() => setSelectedPick(p => p?.label === match.home_short ? null : { label: match.home_short, odds: parseFloat(bestHomeMl.home_odds).toFixed(2) })}
               >
-                <span>{match.home_short} moneyline</span>
+                <span>{isSoccer ? `${match.home_short} gana` : `${match.home_short} moneyline`}</span>
                 <strong>{parseFloat(bestHomeMl.home_odds).toFixed(2)}</strong>
+              </button>
+            )}
+            {isSoccer && bestHomeMl?.draw_odds && (
+              <button
+                type="button"
+                className={`quick-market-card${selectedPick?.label === 'Empate' ? ' selected' : ''}`}
+                onClick={() => setSelectedPick(p => p?.label === 'Empate' ? null : { label: 'Empate', odds: parseFloat(bestHomeMl.draw_odds).toFixed(2) })}
+              >
+                <span>Empate</span>
+                <strong>{parseFloat(bestHomeMl.draw_odds).toFixed(2)}</strong>
               </button>
             )}
             {bestAwayMl && (
@@ -194,7 +208,7 @@ export default function MatchDetail() {
                 className={`quick-market-card${selectedPick?.label === match.away_short ? ' selected' : ''}`}
                 onClick={() => setSelectedPick(p => p?.label === match.away_short ? null : { label: match.away_short, odds: parseFloat(bestAwayMl.away_odds).toFixed(2) })}
               >
-                <span>{match.away_short} moneyline</span>
+                <span>{isSoccer ? `${match.away_short} gana` : `${match.away_short} moneyline`}</span>
                 <strong>{parseFloat(bestAwayMl.away_odds).toFixed(2)}</strong>
               </button>
             )}
@@ -398,7 +412,7 @@ export default function MatchDetail() {
           {/* Games section */}
           {statsTab === 'H2H'
             ? <H2HSection h2h={h2h} match={match} />
-            : <RecentGamesSection homeGames={home_recent} awayGames={away_recent} match={match} numGames={numGames} gamesFilter={gamesFilter} setGamesFilter={setGamesFilter} />
+            : <RecentGamesSection homeGames={home_recent} awayGames={away_recent} match={match} numGames={numGames} gamesFilter={gamesFilter} setGamesFilter={setGamesFilter} isSoccer={isSoccer} />
           }
 
           {/* Public Betting */}
@@ -517,9 +531,12 @@ export default function MatchDetail() {
             </div>
           </div>
 
-          {/* Right tabs: Matchup | Injuries | Insights */}
+          {/* Right tabs: sport-aware */}
           <div style={{ display:'flex', borderBottom:'1px solid rgba(255,255,255,0.05)', marginBottom:'16px' }}>
-            {['matchup','injuries','insights'].map(tab => {
+            {(isSoccer
+              ? [['lineups','Alineaciones'],['injuries','Lesionados'],['insights','Análisis']]
+              : [['matchup','Enfrentamiento'],['injuries','Lesionados'],['insights','Análisis']]
+            ).map(([tab, label]) => {
               const active = rightTab === tab;
               return (
                 <button key={tab} onClick={() => setRightTab(tab)} style={{
@@ -531,20 +548,23 @@ export default function MatchDetail() {
                 }}
                   onMouseEnter={e=>{ if(!active) e.currentTarget.style.color='#bccabb'; }}
                   onMouseLeave={e=>{ if(!active) e.currentTarget.style.color='rgba(188,202,187,0.3)'; }}>
-                  {tab === 'matchup' ? 'Enfrentamiento' : tab === 'injuries' ? 'Lesionados' : 'Análisis'}
+                  {label}
                 </button>
               );
             })}
           </div>
 
-          {rightTab === 'matchup' && (
+          {rightTab === 'lineups' && isSoccer && (
+            <LineupsTab homeLineup={home_lineup} awayLineup={away_lineup} match={match} />
+          )}
+          {rightTab === 'matchup' && !isSoccer && (
             <MatchupTab match={match} pitchers={probable_pitchers} batters={team_batters||[]} hasPitchers={hasPitchers} batterVsPitcher={batter_vs_pitcher||[]} />
           )}
           {rightTab === 'injuries' && (
             <InjuriesTab injuries={injuries} />
           )}
           {rightTab === 'insights' && (
-            <InsightsTab match={match} homeWinPct={homeWinPct} awayWinPct={awayWinPct} h2h={h2h} homeRecord={homeRecord} awayRecord={awayRecord} />
+            <InsightsTab match={match} homeWinPct={homeWinPct} awayWinPct={awayWinPct} h2h={h2h} homeRecord={homeRecord} awayRecord={awayRecord} isSoccer={isSoccer} />
           )}
         </div>
       </div>
@@ -577,7 +597,7 @@ function AnimBar({ lPct, rPct, lLabel, rLabel, barLabel, color }) {
 }
 
 /* ── RecentGamesSection ──────────────────────────────── */
-function RecentGamesSection({ homeGames, awayGames, match, numGames, gamesFilter, setGamesFilter }) {
+function RecentGamesSection({ homeGames, awayGames, match, numGames, gamesFilter, setGamesFilter, isSoccer }) {
   const home = (homeGames||[]).slice(0,numGames);
   const away = (awayGames||[]).slice(0,numGames);
   if (!home.length && !away.length) return (
@@ -606,11 +626,12 @@ function RecentGamesSection({ homeGames, awayGames, match, numGames, gamesFilter
             );
           })}
         </div>
-        {/* Starting pitcher toggle - visual only */}
-        <button style={{ display:'flex', alignItems:'center', gap:'5px', padding:'4px 9px', borderRadius:'6px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', cursor:'pointer', fontSize:'11px', color:'rgba(188,202,187,0.4)' }}>
-          Pitcher abridor
-          <span className="material-symbols-outlined" style={{ fontSize:'13px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>expand_more</span>
-        </button>
+        {!isSoccer && (
+          <button style={{ display:'flex', alignItems:'center', gap:'5px', padding:'4px 9px', borderRadius:'6px', background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.06)', cursor:'pointer', fontSize:'11px', color:'rgba(188,202,187,0.4)' }}>
+            Pitcher abridor
+            <span className="material-symbols-outlined" style={{ fontSize:'13px', fontVariationSettings:"'FILL' 0,'wght' 300" }}>expand_more</span>
+          </button>
+        )}
       </div>
 
       {/* Column headers */}
@@ -1053,7 +1074,7 @@ function InjuriesTab({ injuries }) {
 }
 
 /* ── InsightsTab ─────────────────────────────────────── */
-function InsightsTab({ match, homeWinPct, awayWinPct, h2h, homeRecord, awayRecord }) {
+function InsightsTab({ match, homeWinPct, awayWinPct, h2h, homeRecord, awayRecord, isSoccer }) {
   const h2hHomeWins = (h2h||[]).filter(g => { const a = g.team_a_id===match.home_team_id; return a?g.score_a>g.score_b:g.score_b>g.score_a; }).length;
   const h2hTotal = h2h?.length||0;
   const insights = [
@@ -1062,7 +1083,7 @@ function InsightsTab({ match, homeWinPct, awayWinPct, h2h, homeRecord, awayRecor
     h2hTotal>0&&{ type: h2hHomeWins>h2hTotal/2?'positive':'warning', text:`${match.home_team} ha ganado ${h2hHomeWins} de los últimos ${h2hTotal} enfrentamientos directos.` },
     homeWinPct>=60&&{ type:'positive', text:`${match.home_short} viene en racha con un ${homeWinPct}% de victorias recientes.` },
     awayWinPct<=40&&{ type:'warning',  text:`${match.away_short} ha tenido dificultades — solo ${awayWinPct}% de victorias en los últimos 10.` },
-    { type:'neutral', text:`Este partido se juega en ${match.venue}. Los equipos locales ganan ~55% de los juegos.` },
+    { type:'neutral', text:isSoccer ? `Este partido se juega en ${match.venue}. El empate es siempre una variable real en fútbol.` : `Este partido se juega en ${match.venue}. Los equipos locales ganan ~55% de los juegos.` },
   ].filter(Boolean);
   const iconMap = { positive:'trending_up', warning:'trending_down', neutral:'bar_chart' };
   const colMap  = { positive:'#6bfb9a', warning:'#f87171', neutral:'rgba(188,202,187,0.3)' };
@@ -1086,6 +1107,160 @@ function StatusBadge({ status }) {
   const m = { out:{c:'#f87171',bg:'rgba(248,113,113,0.1)',l:'OUT'}, doubtful:{c:'#facc15',bg:'rgba(250,204,21,0.1)',l:'DTD'}, questionable:{c:'#fb923c',bg:'rgba(251,146,60,0.1)',l:'GTD'}, probable:{c:'#6bfb9a',bg:'rgba(107,251,154,0.1)',l:'PROB'} };
   const s = m[status]||{c:'rgba(188,202,187,0.3)',bg:'rgba(255,255,255,0.05)',l:status};
   return <span style={{ fontSize:'9px', fontWeight:700, color:s.c, background:s.bg, padding:'3px 7px', borderRadius:'5px' }}>{s.l}</span>;
+}
+
+/* ── LineupsTab ──────────────────────────────────────── */
+const POS_ORDER = {
+  'Portero': 0,
+  'Defensa': 1,
+  'Mediocampista': 2,
+  'Delantero': 3,
+};
+
+function posLabel(pos) {
+  if (!pos) return '?';
+  const p = pos.toUpperCase();
+  if (p.includes('PORT') || p === 'GK') return 'POR';
+  if (p.includes('DEF')) return 'DEF';
+  if (p.includes('MEDIO') || p.includes('MID')) return 'MID';
+  if (p.includes('DEL') || p.includes('FWD') || p.includes('ATT')) return 'DEL';
+  return pos.slice(0, 3).toUpperCase();
+}
+
+function SoccerPlayer({ player, isStarter }) {
+  const pColor = player.player_status === 'questionable' ? '#facc15' :
+                 player.player_status === 'injured' ? '#f87171' : null;
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 8,
+      padding: '6px 10px', borderRadius: 7,
+      background: isStarter ? 'rgba(255,255,255,0.04)' : 'transparent',
+      border: isStarter ? '1px solid rgba(255,255,255,0.06)' : 'none',
+      opacity: isStarter ? 1 : 0.6,
+    }}>
+      <span style={{
+        fontSize: 9.5, color: 'rgba(188,202,187,0.4)',
+        width: 18, textAlign: 'right', fontWeight: 600, flexShrink: 0,
+        fontVariantNumeric: 'tabular-nums',
+      }}>
+        {player.player_number}
+      </span>
+      <span style={{
+        fontSize: 12, color: pColor || '#f0f0f0', fontWeight: isStarter ? 500 : 400,
+        flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      }}>
+        {shortName(player.player_name)}
+      </span>
+      <span style={{
+        fontSize: 8.5, fontWeight: 700, letterSpacing: '0.04em',
+        color: isStarter ? 'rgba(188,202,187,0.45)' : 'rgba(188,202,187,0.2)',
+        background: 'rgba(255,255,255,0.05)',
+        padding: '1px 5px', borderRadius: 4, flexShrink: 0,
+      }}>
+        {posLabel(player.player_position)}
+      </span>
+      {player.status === 'questionable' && (
+        <span style={{ fontSize: 9, fontWeight: 700, color: '#facc15' }}>?</span>
+      )}
+    </div>
+  );
+}
+
+function TeamLineup({ lineup, teamName, teamShort }) {
+  if (!lineup?.length) return (
+    <div style={{ padding: '16px 10px', textAlign: 'center', fontSize: 11, color: 'rgba(188,202,187,0.3)' }}>
+      Sin alineación confirmada
+    </div>
+  );
+
+  const starters = lineup.filter(p => p.is_starter).sort((a, b) => (a.position_order || 0) - (b.position_order || 0));
+  const bench = lineup.filter(p => !p.is_starter).sort((a, b) => (a.position_order || 0) - (b.position_order || 0));
+
+  const gk  = starters.filter(p => posLabel(p.player_position) === 'POR');
+  const def = starters.filter(p => posLabel(p.player_position) === 'DEF');
+  const mid = starters.filter(p => posLabel(p.player_position) === 'MID');
+  const fwd = starters.filter(p => posLabel(p.player_position) === 'DEL');
+
+  const sections = [
+    { label: 'Portero', players: gk },
+    { label: 'Defensas', players: def },
+    { label: 'Mediocampo', players: mid },
+    { label: 'Delanteros', players: fwd },
+  ].filter(s => s.players.length > 0);
+
+  return (
+    <div>
+      <p style={{
+        fontSize: 9, fontWeight: 700, color: 'rgba(188,202,187,0.35)',
+        textTransform: 'uppercase', letterSpacing: '0.1em',
+        margin: '0 0 8px',
+      }}>
+        {teamShort} · Titular
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {sections.map(({ label, players }) => (
+          <div key={label}>
+            <p style={{
+              fontSize: 8.5, color: 'rgba(188,202,187,0.25)',
+              textTransform: 'uppercase', letterSpacing: '0.08em',
+              fontWeight: 600, margin: '0 0 4px 10px',
+            }}>
+              {label}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {players.map((p, i) => <SoccerPlayer key={i} player={p} isStarter />)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {bench.length > 0 && (
+        <>
+          <p style={{
+            fontSize: 8.5, color: 'rgba(188,202,187,0.2)',
+            textTransform: 'uppercase', letterSpacing: '0.08em',
+            fontWeight: 600, margin: '14px 0 4px 10px',
+          }}>
+            Banca
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {bench.map((p, i) => <SoccerPlayer key={i} player={p} isStarter={false} />)}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function LineupsTab({ homeLineup, awayLineup, match }) {
+  const hasAny = (homeLineup?.length || 0) + (awayLineup?.length || 0) > 0;
+
+  if (!hasAny) {
+    return (
+      <div style={{ padding: '32px 16px', textAlign: 'center' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 28, color: 'rgba(188,202,187,0.2)', display: 'block', marginBottom: 8 }}>
+          groups
+        </span>
+        <p style={{ fontSize: 13, color: 'rgba(188,202,187,0.4)', margin: 0, fontWeight: 600 }}>
+          Alineaciones aún no confirmadas
+        </p>
+        <p style={{ fontSize: 11, color: 'rgba(188,202,187,0.25)', margin: '6px 0 0' }}>
+          Generalmente se confirman 1–2 horas antes del partido.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div className="lit-card" style={{ padding: '14px 12px' }}>
+        <TeamLineup lineup={homeLineup} teamName={match.home_team} teamShort={match.home_short} />
+      </div>
+      <div className="lit-card" style={{ padding: '14px 12px' }}>
+        <TeamLineup lineup={awayLineup} teamName={match.away_team} teamShort={match.away_short} />
+      </div>
+    </div>
+  );
 }
 
 /* ── Helpers ─────────────────────────────────────────── */

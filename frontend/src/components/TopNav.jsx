@@ -3,7 +3,8 @@ const LEAGUES = [
   { slug: 'nba', name: 'NBA' },
   { slug: 'nfl', name: 'NFL' },
   { slug: 'nhl', name: 'NHL' },
-  { slug: 'liga-mx', name: 'Fútbol' },
+  { slug: 'liga-mx', name: 'Liga MX' },
+  { slug: 'world-cup', name: '⚽ Mundial' },
 ];
 
 export default function TopNav({ activeLeague, onLeague, search, onSearch }) {

@@ -81,6 +81,13 @@ async function run(date) {
     console.error('[daily-sync] sync-mlb-batters failed:', e.message);
   }
 
+  // World Cup sync — uses ESPN public API, no key needed
+  try {
+    await runScript('sync-world-cup.js', [target]);
+  } catch (e) {
+    console.error('[daily-sync] sync-world-cup failed:', e.message);
+  }
+
   console.log(`[daily-sync] Done for ${target}.`);
 }
 
